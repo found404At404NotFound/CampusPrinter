@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Login</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #007bff, #00c6ff);
+      margin: 0;
+    }
+
+    .container {
+      background: #fff;
+      padding: 35px 40px;
+      border-radius: 15px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+      text-align: left;
+      width: 320px;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 25px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0,123,255,0.3);
+    }
+
+    button {
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #msg {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Login into account</h1><br>
+    <form id="loginForm">
+      User ID or Email:
+      <input type="text" id="userid" placeholder="User ID" required /><br><br>
+      <label>Password:</label>
+      <input type="password" id="password" placeholder="Password" required /><br><br>
+      <label>
+      <a class="link" name="forgot" href="/fof/forgotpass">Forgot Password?</a>
+      </label>
+      <label>
+      <a class="link" href="reg.html" name="signup">Sign up instead</a><br><br>
+      </label>
+      <button type="submit">Login</button>
+    </form>
+    <p id="msg"></p>
+  </div>
+
+<script>
+    const form = document.getElementById('loginForm');
+    const msg = document.getElementById('msg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('userid').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      try {
+        // Removed trailing space from the URL
+        const response = await fetch('https://two-pichunter-rom-notes.trycloudflare.com/fof/login', { // <--- Corrected URL
+          method: 'POST',
+          credentials: 'include', // ✅ Needed for Flask session cookie
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          msg.style.color = 'green';
+          msg.textContent = data.message || 'Login successful!';
+          // Redirect to dashboard page
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 1000);
+        } else {
+          msg.style.color = 'red';
+          msg.textContent = data.message || 'Login failed!';
+        }
+
+      } catch (error) {
+        console.error("Fetch error:", error); // Add logging for debugging
+        msg.style.color = 'red';
+        msg.textContent = 'Server error. Please try again later.';
+      }
+    });
+  </script>
+  
+</body>
+</html>
