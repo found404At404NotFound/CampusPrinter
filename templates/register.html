@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Registration</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #007bff, #00c6ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 14px;
+      width: 360px;
+      box-shadow: 0 5px 18px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+
+    h2 { color: #333; margin-bottom: 20px; }
+    p { color: #555; font-size: 0.9rem; margin-bottom: 1.2rem; }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      font-size: 15px;
+    }
+
+    #username {
+      background-color: #f8f9fa;
+      border: 2px solid #007bff;
+      font-weight: bold;
+      color: #0056b3;
+    }
+
+    .field-label {
+      text-align: left;
+      display: block;
+      font-size: 13px;
+      color: #666;
+      margin-top: 5px;
+      font-weight: 600;
+    }
+
+    button {
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    button:hover { background-color: #0056b3; }
+
+    .message { margin-top: 12px; font-size: 14px; min-height: 20px; }
+    .success { color: #28a745; font-weight: bold; }
+    .error { color: #d32f2f; font-weight: bold; }
+
+    .hidden { display: none; }
+
+    #otpInput {
+      font-size: 1.5rem;
+      letter-spacing: 8px;
+      text-align: center;
+      border: 2px solid #007bff;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="regSection">
+    <h2>Create Account</h2>
+    <form id="registerForm">
+      <input type="text" id="fullname" placeholder="Full Name" required />
+      <input type="email" id="email" placeholder="College Email (@cvr.ac.in)" required />
+      
+      <label class="field-label">Username (Auto-extracted):</label>
+      <input type="text" id="username" placeholder="Username" readonly />
+      
+      <input type="password" id="password" placeholder="Password" required />
+      <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+      
+      <select id="usertype" required>
+        <option value="">Select User Type</option>
+        <option value="s">Student</option>
+        <option value="f">Staff</option>
+      </select>
+      
+      <button type="submit">Send OTP</button>
+    </form>
+    <div class="message" id="regMsg"></div>
+  </div>
+
+  <div class="container hidden" id="otpSection">
+    <h2>Verify OTP</h2>
+    <p>5-digit code sent to:<br><b id="displayEmail" style="color:#007bff;"></b></p>
+    
+    <input type="text" id="otpInput" maxlength="5" placeholder="00000">
+    
+    <button id="verifyBtn">Verify OTP</button>
+    
+    <div class="message" id="otpMsg"></div>
+    <p style="margin-top:20px; font-size: 0.85rem; color: #007bff; cursor:pointer;" onclick="location.reload()">← Edit Details</p>
+  </div>
+
+  <script>
+    const emailInput=document.getElementById("email");
+    const usernameInput=document.getElementById("username");
+    const regSection=document.getElementById("regSection");
+    const otpSection=document.getElementById("otpSection");
+    // Auto-fill username field
+    emailInput.addEventListener("input", () => {
+      const email=emailInput.value;
+      usernameInput.value = email.includes("@") ? email.split("@")[0] : "";
+    });
+    // Register Call
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg=document.getElementById("regMsg");
+      const email=emailInput.value;
+      const username=usernameInput.value;
+      const name=document.getElementById("fullname").value;
+      const password=document.getElementById("password").value;
+      const confirmPassword=document.getElementById("confirmPassword").value;
+      if(!email.endsWith("@cvr.ac.in")) {
+        msg.innerHTML = "<span class='error'>Use @cvr.ac.in email only!</span>";
+        return;
+      }
+      if(password !== confirmPassword) {
+        msg.innerHTML = "<span class='error'>Passwords don't match!</span>";
+        return;
+      }
+      const data={
+        name:name,
+        username:username,
+        email:email,
+        password:password,
+        usertype:document.getElementById("usertype").value
+      };
+      try {
+        const res = await fetch("http://127.0.0.1:5000/fof/register", {
+          method:"POST",
+          headers:{ "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        if (res.ok) {
+          document.getElementById("displayEmail").textContent = email;
+          regSection.classList.add("hidden");
+          otpSection.classList.remove("hidden");
+        }else{
+          const result=await res.json();
+          msg.innerHTML = `<span class='error'>${result.message||"Error"}</span>`;
+        }
+      } catch(err){
+        msg.innerHTML="<span class='error'>Connection failed</span>";
+      }
+    });
+    //  OTP Call
+    document.getElementById("verifyBtn").addEventListener("click", async () => {
+      const otp=document.getElementById("otpInput").value.trim();
+      const msg=document.getElementById("otpMsg");
+      const username=usernameInput.value;
+      if (otp.length!==5){
+        msg.innerHTML="<span class='error'>Enter 5-digit OTP</span>";
+        return;
+      }
+      try {
+        // Constructing url
+        const url=`http://127.0.0.1:5000/fof/reg_otp?username=${encodeURIComponent(username)}`;
+        const res=await fetch(url, {
+          method:"POST",
+          headers:{ "Content-Type": "application/json" },
+          body: JSON.stringify({otp:otp})
+        });
+        const data=await res.json();
+        if (res.ok) {
+          msg.innerHTML="<span class='success'>Verified Redirecting</span>";
+          setTimeout(()=>{ window.location.href="/fof/login"; }, 1500);
+        }else{
+          msg.innerHTML=`<span class='error'>${data.message||"Invalid OTP"}</span>`;
+        }
+      }catch (err){
+        msg.innerHTML="<span class='error'>Failed to reach server</span>";
+      }
+    });
+  </script>
+</body>
+</html> 
