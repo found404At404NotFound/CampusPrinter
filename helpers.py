@@ -5,38 +5,38 @@ load_dotenv()
 
 
 ######################## FOR EMAIL OTP SENDING #######################################
-import smtplib as smt
-from email.mime.text import MIMEText as mt
-import random as rd
-class EmailNotValid(Exception):
-    pass
+import os
+import random
+from sib_api_v3_sdk import Configuration, ApiClient
+from sib_api_v3_sdk.api.transactional_emails_api import TransactionalEmailsApi
+from sib_api_v3_sdk.models.send_smtp_email import SendSmtpEmail
 
 def SEND_OTP(email):
-    otp = rd.randint(10000, 99999)
-    try:
-        # Fetch sender email and password from .env
-        sender = os.getenv('EMAIL_ADDRESS')
-        password = os.getenv('EMAIL_PASSWORD')
+    otp = random.randint(10000, 99999)
 
-        if not sender or not password:
-            raise EmailNotValid("Email sender or password not set in environment variables")
+    config = Configuration()
+    config.api_key['api-key'] = os.getenv("BREVO_API_KEY")
 
-        msg = mt(f'Your OTP is : {otp}\n\nKindly Do not reply to this email.')
-        msg["From"] = sender
-        msg["To"] = email
-        msg["Reply-To"] = "noreply@example.com"
+    api_client = ApiClient(config)
+    api_instance = TransactionalEmailsApi(api_client)
 
-        with smt.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(sender, password)
-            server.sendmail(sender, email, msg.as_string())
+    email_data = SendSmtpEmail(
+        to=[{"email": email}],
+        sender={
+            "name": "Printer App",
+            "email": os.getenv("EMAIL_FROM") 
+        },
+        subject="Your OTP Verification",
+        html_content=f"""
+        <h3>Your OTP is: {otp}</h3>
+        <p>Do Not Reply To this Email.</p>
+        <p>Do not share it with anyone.</p>
+        """
+    )
 
-        print(f"OTP sent to {email}: {otp}")
+    api_instance.send_transac_email(email_data)
 
-    except Exception as e:
-        print("Email sending failed:", e)
-
-    # Always return OTP (whether mail sent or not)
+    print("OTP sent:", otp)
     return otp
 ######################################################################################
 
