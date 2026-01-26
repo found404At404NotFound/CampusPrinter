@@ -77,9 +77,13 @@ def ping():
     return jsonify(ping="pong")
 
 
+@app.route('/')
+def root():
+    return redirect(url_for('get_login'))
+
 @app.get('/fof/register')
 def get_register():
-    return jsonify(msg='send post request.')
+    return render_template('register.html')
 
 @app.post('/fof/register')
 def post_register(): 
@@ -105,13 +109,13 @@ def post_register():
         session['username']=username
         return jsonify(msg='User Ready For Verification.'),200
     except IntegrityError:
-        return jsonify(msg="User Alread Exists With Some Otp"),403
+        return jsonify(msg="User Alread Exists With Some Otp"),200
 
     
 
 @app.get('/fof/reg_otp')
 def get_reg_otp():
-    return jsonify(msg='send post request.'),200
+    return render_template('otp.html')
 
 @app.post('/fof/reg_otp')
 def post_reg_otp():
@@ -214,4 +218,4 @@ def getses():
 if __name__=='__main__':
     with app.app_context():
         db.create_all()
-    app.run( threaded=True, host='0.0.0.0')
+    app.run(debug=True, threaded=True, host='0.0.0.0')
