@@ -155,7 +155,7 @@
         usertype:document.getElementById("usertype").value
       };
       try {
-        const res = await fetch("campusprinter.up.railway.app/fof/register", {
+        const res = await fetch("https://campusprinter.up.railway.app/fof/register", {
           method:"POST",
           headers:{ "Content-Type": "application/json" },
           body: JSON.stringify(data)
@@ -183,7 +183,7 @@
       }
       try {
         // Constructing url
-        const url=`campusprinter.up.railway.app/fof/reg_otp?username=${encodeURIComponent(username)}`;
+        const url=`https://campusprinter.up.railway.app/fof/reg_otp?username=${encodeURIComponent(username)}`;
         const res=await fetch(url, {
           method:"POST",
           headers:{ "Content-Type": "application/json" },
