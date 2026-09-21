@@ -1,205 +1,278 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>User Registration</title>
-  <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, #007bff, #00c6ff);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sign up — Campus Print</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
-    .container {
-      background: white;
-      padding: 30px 40px;
-      border-radius: 14px;
-      width: 360px;
-      box-shadow: 0 5px 18px rgba(0,0,0,0.15);
-      text-align: center;
-    }
+<script
+  defer
+  crossorigin="anonymous"
+  src="https://free-kid-3262.clerk.accounts.dev/npm/@clerk/ui@1/dist/ui.browser.js"
+  type="text/javascript">
+</script>
+<script
+  defer
+  crossorigin="anonymous"
+  data-clerk-publishable-key="pk_test_ZnJlZS1raWQtMzI2Mi5jbGVyay5hY2NvdW50cy5kZXYk"
+  src="https://free-kid-3262.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
+  type="text/javascript">
+</script>
 
-    h2 { color: #333; margin-bottom: 20px; }
-    p { color: #555; font-size: 0.9rem; margin-bottom: 1.2rem; }
+<style>
+:root{
+  --blue:#007bff; --blue-600:#0a58ca; --cyan:#00c6ff; --muted:#6b7280;
+  --ink:#0b1220; --ink-2:#101a2e; --ok:#22c55e;
+  font-family:"Inter",system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:flex;min-height:100vh;background:#fff;color:#0b1b2b}
+.split{display:flex;width:100%;min-height:100vh}
 
-    input, select {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-      font-size: 15px;
-    }
+/* ---------- LEFT: Clerk mounts here ---------- */
+.left{flex:1;min-width:340px;background:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px 24px}
+.form-wrap{width:100%;max-width:400px}
+.brand-row{text-align:center;margin-bottom:26px}
+.brand-title{font-size:28px;font-weight:800;color:#0b1b2b;letter-spacing:-0.5px}
 
-    #username {
-      background-color: #f8f9fa;
-      border: 2px solid #007bff;
-      font-weight: bold;
-      color: #0056b3;
-    }
+#clerk-mount{display:flex;justify-content:center;min-height:320px}
+.foot{text-align:center;font-size:13px;color:#6b7280;margin-top:18px}
+.foot a{color:#0072ff;text-decoration:none;font-weight:600}
+#loading{color:var(--muted);font-size:14px;text-align:center;padding:40px 0}
+#loadErr{color:#b90000;font-size:13px;text-align:center;display:none}
 
-    .field-label {
-      text-align: left;
-      display: block;
-      font-size: 13px;
-      color: #666;
-      margin-top: 5px;
-      font-weight: 600;
-    }
+/* signed-in view */
+#signedIn{display:none;text-align:center}
+#signedIn h2{font-size:19px;margin:0 0 12px}
+#userInfo{margin:16px 0;padding:14px;background:#f8fbff;border-radius:10px;text-align:left;font-size:13px;line-height:1.7;border:1px solid #e6eef6}
+#goApp{display:inline-block;margin-top:6px;padding:.65rem 1.2rem;border-radius:9px;background:var(--blue);color:#fff;text-decoration:none;font-weight:700;font-size:14px}
+#goApp:hover{background:var(--blue-600)}
+.logout-button{margin-top:10px;padding:.65rem 1.2rem;border:1px solid #dce7ff;border-radius:9px;background:#fff;color:#b42318;font-weight:700;cursor:pointer;font-size:14px}
 
-    button {
-      width: 100%;
-      background-color: #007bff;
-      color: white;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      margin-top: 15px;
-      font-weight: bold;
-    }
+/* ---------- RIGHT: brand panel (matches print.html's blue gradient) ---------- */
+.right{
+  flex:1;min-width:340px;
+  background:linear-gradient(135deg,#0072ff 0%, #00c6ff 100%);
+  color:#fff;padding:56px 48px;display:flex;flex-direction:column;justify-content:space-between;
+  overflow:hidden;
+}
+.right .top{display:flex;align-items:center;gap:12px}
+.right .logo{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;font-weight:700}
+.right .logo i{font-size:18px}
+.right .name{font-weight:700;font-size:17px}
+.right .tag{font-size:12px;color:rgba(255,255,255,0.8)}
+.headline{font-size:30px;line-height:1.28;margin:40px 0 10px;font-weight:700;max-width:460px;color:#fff}
+.headline .accent{color:#0b1b2b;background:#fff;padding:0 6px;border-radius:6px}
+.desc{color:rgba(255,255,255,0.9);font-size:15px;max-width:440px;line-height:1.6;margin-bottom:28px}
+.features{display:flex;flex-direction:column;gap:12px;margin-bottom:8px}
+.feature{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:#fff}
+.feature i{color:#fff;margin-top:2px}
+.queue{margin-top:32px;background:#f8fbff;border:1px solid #dce4f7;border-left:6px solid #0a58ca;border-radius:12px;padding:14px 16px;max-width:420px;box-shadow:0 8px 24px rgba(2,6,23,0.12)}
+.queue-title{font-size:12px;color:#5b6b85;margin-bottom:10px;font-weight:600}
+.ticket{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;border-top:1px solid #e6eef6;color:#0b1b2b}
+.ticket:first-of-type{border-top:0}
+.ticket .id{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;color:#0a58ca}
+.ticket .stat{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600}
+.stat.printing{background:#e9fff0;color:#1a9e4e}
+.stat.queued{background:#eef2ff;color:#475569}
+.blocks{color:rgba(255,255,255,0.75);font-size:12px;margin-top:26px}
 
-    button:hover { background-color: #0056b3; }
+/* ---------- animated printer scene ---------- */
+.printer-scene{position:relative;height:210px;max-width:420px;margin-top:10px}
+.floaters{position:absolute;inset:0;pointer-events:none}
+.floaters i{
+  position:absolute;bottom:0;color:rgba(255,255,255,0.55);font-size:20px;
+  animation:floatUp 6s ease-in infinite;
+}
+.floaters i:nth-child(1){left:6%;animation-delay:0s;font-size:18px}
+.floaters i:nth-child(2){left:28%;animation-delay:1.4s;font-size:22px}
+.floaters i:nth-child(3){left:70%;animation-delay:0.6s;font-size:16px}
+.floaters i:nth-child(4){left:88%;animation-delay:2.4s;font-size:20px}
+.floaters i:nth-child(5){left:48%;animation-delay:3.2s;font-size:15px}
+@keyframes floatUp{
+  0%{transform:translateY(0) rotate(0deg);opacity:0}
+  10%{opacity:.9}
+  85%{opacity:.25}
+  100%{transform:translateY(-190px) rotate(12deg);opacity:0}
+}
 
-    .message { margin-top: 12px; font-size: 14px; min-height: 20px; }
-    .success { color: #28a745; font-weight: bold; }
-    .error { color: #d32f2f; font-weight: bold; }
+.printer{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:150px}
+.printer-body{
+  width:150px;height:62px;background:#ffffff;border-radius:10px;
+  box-shadow:0 16px 34px rgba(2,6,23,.22);position:relative;z-index:2;
+}
+.printer-body::before{
+  content:'';position:absolute;top:10px;left:14px;right:14px;height:5px;
+  border-radius:3px;background:#0072ff;opacity:.35;
+}
+.printer-led{position:absolute;top:11px;right:14px;width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.paper-slot{
+  position:absolute;left:22px;right:22px;top:-84px;height:84px;
+  overflow:hidden;z-index:1;
+}
+.paper{
+  position:absolute;left:0;right:0;bottom:0;height:84px;background:#fff;
+  border-radius:2px 2px 0 0;box-shadow:0 6px 16px rgba(2,6,23,.12);
+  transform:translateY(100%);
+  animation:printSheet 3.6s cubic-bezier(.5,0,.3,1) infinite;
+}
+.paper::before,.paper::after{
+  content:'';position:absolute;left:10px;right:10px;height:3px;background:#dbe4f7;border-radius:2px;
+}
+.paper::before{top:16px}
+.paper::after{top:27px}
+@keyframes printSheet{
+  0%{transform:translateY(100%)}
+  15%{transform:translateY(100%)}
+  55%{transform:translateY(6%)}
+  85%{transform:translateY(6%)}
+  100%{transform:translateY(100%)}
+}
+.printer-caption{
+  position:absolute;left:50%;bottom:-26px;transform:translateX(-50%);
+  font-size:12px;color:rgba(255,255,255,0.85);white-space:nowrap;font-weight:600;
+}
+@media (prefers-reduced-motion: reduce){
+  .floaters i, .paper{animation:none}
+}
 
-    .hidden { display: none; }
-
-    #otpInput {
-      font-size: 1.5rem;
-      letter-spacing: 8px;
-      text-align: center;
-      border: 2px solid #007bff;
-      margin-top: 20px;
-    }
-  </style>
+@media(max-width:860px){
+  .split{flex-direction:column}
+  .right{order:-1;padding:32px}
+  .headline{font-size:24px}
+  .queue{display:none}
+}
+</style>
 </head>
 <body>
+<div class="split">
 
-  <div class="container" id="regSection">
-    <h2>Create Account</h2>
-    <form id="registerForm">
-      <input type="text" id="fullname" placeholder="Full Name" required />
-      <input type="email" id="email" placeholder="College Email (@cvr.ac.in)" required />
-      
-      <label class="field-label">Username (Auto-extracted):</label>
-      <input type="text" id="username" placeholder="Username" readonly />
-      
-      <input type="password" id="password" placeholder="Password" required />
-      <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
-      
-      <select id="usertype" required>
-        <option value="">Select User Type</option>
-        <option value="s">Student</option>
-        <option value="f">Staff</option>
-      </select>
-      
-      <button type="submit">Send OTP</button>
-    </form>
-    <div class="message" id="regMsg"></div>
+  <div class="left">
+    <div class="form-wrap">
+      <div class="brand-row">
+        <span class="brand-title">Campus Print</span>
+      </div>
+
+      <div id="loading">Loading sign-up...</div>
+      <div id="loadErr">Failed to load Clerk. Check the browser console.</div>
+      <div id="clerk-mount"></div>
+      <div class="foot">Already have an account? <a href="/login">Sign in</a></div>
+
+      <div id="signedIn">
+        <h2>You're signed in 🎉</h2>
+        <div id="user-button"></div>
+        <div id="userInfo"></div>
+        <a id="goApp" href="/print">Go to Campus Print</a>
+        <button class="logout-button" id="logoutButton" type="button">Sign out</button>
+      </div>
+    </div>
   </div>
 
-  <div class="container hidden" id="otpSection">
-    <h2>Verify OTP</h2>
-    <p>5-digit code sent to:<br><b id="displayEmail" style="color:#007bff;"></b></p>
-    
-    <input type="text" id="otpInput" maxlength="5" placeholder="00000">
-    
-    <button id="verifyBtn">Verify OTP</button>
-    
-    <div class="message" id="otpMsg"></div>
-    <p style="margin-top:20px; font-size: 0.85rem; color: #007bff; cursor:pointer;" onclick="location.reload()">← Edit Details</p>
+  <div class="right">
+    <div class="top">
+      <div class="logo"><i class="fas fa-print"></i></div>
+      <div>
+        <div class="name">Campus Print</div>
+        <div class="tag">No more standing in the print queue</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="headline">Upload from your seat.<br>Walk up with a code.<br><span class="accent">Print in seconds.</span></div>
+      <p class="desc">One printer, one long line, every deadline day. Campus Print lets you upload, pay, and print without ever touching the machine's queue.</p>
+
+      <div class="features">
+        <div class="feature"><i class="fas fa-file-upload"></i> Upload PDFs, docs, slides or images</div>
+        <div class="feature"><i class="fas fa-key"></i> Get a one-time code by email after payment</div>
+        <div class="feature"><i class="fas fa-bolt"></i> Enter the code at the printer — it prints itself</div>
+      </div>
+
+      <div class="printer-scene">
+        <div class="floaters">
+          <i class="fas fa-file-pdf"></i>
+          <i class="fas fa-file-word"></i>
+          <i class="fas fa-image"></i>
+          <i class="fas fa-file-powerpoint"></i>
+          <i class="fas fa-file-alt"></i>
+        </div>
+        <div class="printer">
+          <div class="paper-slot"><div class="paper"></div></div>
+          <div class="printer-body"><div class="printer-led"></div></div>
+          <div class="printer-caption">Printing in real time — no queue, no waiting</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="blocks">Live across CM · IST · CB · PG · Main · BA blocks</div>
   </div>
 
-  <script>
-    const emailInput=document.getElementById("email");
-    const usernameInput=document.getElementById("username");
-    const regSection=document.getElementById("regSection");
-    const otpSection=document.getElementById("otpSection");
-    // Auto-fill username field
-    emailInput.addEventListener("input", () => {
-      const email=emailInput.value;
-      usernameInput.value = email.includes("@") ? email.split("@")[0] : "";
+</div>
+
+<script>
+const REDIRECT_AFTER_AUTH = "/print";
+
+async function logout() {
+  const button = document.getElementById('logoutButton');
+  button.disabled = true;
+  try {
+    if (window.Clerk && Clerk.isSignedIn) await Clerk.signOut();
+  } finally {
+    await fetch('/fof/logout', {method: 'POST', credentials: 'include'});
+    window.location.href = '/login';
+  }
+}
+
+document.getElementById('logoutButton').addEventListener('click', logout);
+
+window.addEventListener("load", async function () {
+  try {
+    await Clerk.load({
+      ui: { ClerkUI: window.__internal_ClerkUICtor }
     });
-    // Register Call
-    document.getElementById("registerForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const msg=document.getElementById("regMsg");
-      const email=emailInput.value;
-      const username=usernameInput.value;
-      const name=document.getElementById("fullname").value;
-      const password=document.getElementById("password").value;
-      const confirmPassword=document.getElementById("confirmPassword").value;
-      if(!email.endsWith("@cvr.ac.in")) {
-        msg.innerHTML = "<span class='error'>Use @cvr.ac.in email only!</span>";
-        return;
-      }
-      if(password !== confirmPassword) {
-        msg.innerHTML = "<span class='error'>Passwords don't match!</span>";
-        return;
-      }
-      const data={
-        name:name,
-        username:username,
-        email:email,
-        password:password,
-        usertype:document.getElementById("usertype").value
-      };
-      try {
-        const res = await fetch("https://campusprinter.up.railway.app/fof/register", {
-          method:"POST",
-          headers:{ "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-        if (res.ok) {
-          document.getElementById("displayEmail").textContent = email;
-          regSection.classList.add("hidden");
-          otpSection.classList.remove("hidden");
-        }else{
-          const result=await res.json();
-          msg.innerHTML = `<span class='error'>${result.message||"Error"}</span>`;
+
+    document.getElementById('loading').style.display = 'none';
+
+    const mountEl = document.getElementById('clerk-mount');
+    const signedInEl = document.getElementById('signedIn');
+
+    if (Clerk.isSignedIn) {
+      mountEl.style.display = 'none';
+      signedInEl.style.display = 'block';
+
+      Clerk.mountUserButton(document.getElementById('user-button'));
+
+      const user = Clerk.user;
+      document.getElementById('userInfo').innerHTML = `
+        <strong>Name:</strong> ${user.firstName || ''} ${user.lastName || ''}<br>
+        <strong>Email:</strong> ${user.primaryEmailAddress?.emailAddress || 'Not available'}
+      `;
+    } else {
+      Clerk.mountSignUp(mountEl, {
+        signInUrl: "/login",
+        forceRedirectUrl: REDIRECT_AFTER_AUTH,
+        signInForceRedirectUrl: REDIRECT_AFTER_AUTH,
+        appearance: {
+          variables: {
+            colorPrimary: "#0072ff",
+            colorText: "#0b1b2b",
+            fontFamily: "Inter, system-ui, Arial, sans-serif",
+            borderRadius: "10px"
+          },
+          elements: {
+            footerAction: { display: "none" }
+          }
         }
-      } catch(err){
-        msg.innerHTML="<span class='error'>Connection failed</span>";
-      }
-    });
-    //  OTP Call
-    document.getElementById("verifyBtn").addEventListener("click", async () => {
-      const otp=document.getElementById("otpInput").value.trim();
-      const msg=document.getElementById("otpMsg");
-      const username=usernameInput.value;
-      if (otp.length!==5){
-        msg.innerHTML="<span class='error'>Enter 5-digit OTP</span>";
-        return;
-      }
-      try {
-        // Constructing url
-        const url=`https://campusprinter.up.railway.app/fof/reg_otp?username=${encodeURIComponent(username)}`;
-        const res=await fetch(url, {
-          method:"POST",
-          headers:{ "Content-Type": "application/json" },
-          body: JSON.stringify({otp:otp})
-        });
-        const data=await res.json();
-        if (res.ok) {
-          msg.innerHTML="<span class='success'>Verified Redirecting</span>";
-          setTimeout(()=>{ window.location.href="/fof/login"; }, 1500);
-        }else{
-          msg.innerHTML=`<span class='error'>${data.message||"Invalid OTP"}</span>`;
-        }
-      }catch (err){
-        msg.innerHTML="<span class='error'>Failed to reach server</span>";
-      }
-    });
-  </script>
+      });
+    }
+  } catch (error) {
+    console.error("Clerk error:", error);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('loadErr').style.display = 'block';
+  }
+});
+</script>
 </body>
-</html> 
+</html>
