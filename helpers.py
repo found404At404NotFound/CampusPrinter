@@ -5,38 +5,35 @@ load_dotenv()
 
 
 ######################## FOR EMAIL OTP SENDING #######################################
-import os
+
+import resend
 import random
-from sib_api_v3_sdk import Configuration, ApiClient
-from sib_api_v3_sdk.api.transactional_emails_api import TransactionalEmailsApi
-from sib_api_v3_sdk.models.send_smtp_email import SendSmtpEmail
+def SEND_OTP(email, type):
+    otp = random.randint(100000, 999999)
 
-def SEND_OTP(email):
-    otp = random.randint(10000, 99999)
+    
+    resend.api_key =os.getenv("RESEND_API_KEY")
 
-    config = Configuration()
-    config.api_key['api-key'] = os.getenv("BREVO_API_KEY")
+    params = {
+        "from": "CampusPrinter <otp@printer.mangojam.me>",
+        "to": [f"{email}"],
 
-    api_client = ApiClient(config)
-    api_instance = TransactionalEmailsApi(api_client)
+        "template": {
+            "id": "print-verification-code",
+            "variables": {
+                "first_name": "User",
+                "printer_name": "CSE Lab Printer",
+                "expiry_minutes": '10',
+                "otp_code": f"{otp}",
+                "company_name": "CampusPrinter",
+                "company_address": "CVR College of Engineering"
+            }
+        }
+    }
 
-    email_data = SendSmtpEmail(
-        to=[{"email": email}],
-        sender={
-            "name": "Printer App",
-            "email": os.getenv("EMAIL_FROM") 
-        },
-        subject="Your OTP Verification",
-        html_content=f"""
-        <h3>Your OTP is: {otp}</h3>
-        <p>Do Not Reply To this Email.</p>
-        <p>Do not share it with anyone.</p>
-        """
-    )
+    email = resend.Emails.send(params)
 
-    api_instance.send_transac_email(email_data)
-
-    print("OTP sent:", otp)
+    print(email)
     return otp
 ######################################################################################
 
@@ -75,4 +72,42 @@ def CHECK_PASSWORD_HASH(password: str, hashed_password: str):
     return cph(hashed_password, password)
 
 #######################################################################################
+
+def GET_BRANCH_AND_YEAR(rollNumber : str, current_year : int) -> tuple[str,int]:
+    year=current_year-int(rollNumber[0:1])
+    print(year)
+    print(rollNumber)
+    d={'A62':'CS',
+       'A66':'AIML',
+       'A05':'CSE',
+       'A67':'DS',
+       'A01':'CIVIL',
+       'A32':'BS',
+       'A04':'ECE',
+       'A03':'MECH',
+       'A06':'EVL',
+       'A07':'EIE'}
+
+    
+    return d.get(rollNumber[5:8].upper()),year
+
+
+
+
+def IS_DEV( roll : str )-> bool :
+    l=['24B81A62J5','24B81A62H9','24B81A62E9','24B81A62K2','24B81A62G0','24B81A05ML']
+    if not roll :
+        return False
+    if roll.upper() in l :
+        return True
+    else:
+        return False
+
+
+def GET_USERNAME(username : str , email : str) -> str:
+    if( not username):
+        l=len(email)
+        username=email[:l-10]
+    return username
+
 
