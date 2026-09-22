@@ -12,7 +12,6 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.datastructures import FileStorage
 from models import * 
 from werkzeug.utils import secure_filename
-
 from clerk_backend_api import Clerk
 from clerk_backend_api.security import authenticate_request
 from clerk_backend_api.security.types import AuthenticateRequestOptions
@@ -122,30 +121,36 @@ def logout():
     return response
 
 
+@app.route('/printers', methods=['GET'])
+def get_printers():
+    pObjs = Printer.query.all()
+
+    printers = [
+        {
+            "id": p.PRINTER_ID,                              
+            "name": p.PRINTER_NAME,                        
+            "sub": f"{p.BLOCK} · {p.PRINTER_LOCATION}",      
+            "online": bool(p.AVAILABLE),
+            "endpoint": p.ENDPOINT_URL                   
+        }
+        for p in pObjs
+    ]
+
+    return jsonify(printers)
+
 
 
 @app.route("/upload", methods=["POST"])
 def upload():
-
-    # Get Clerk session token
+    # ---- Clerk session ----
     token = request.cookies.get("__session")
-
     if not token:
         return redirect("/login")
 
     try:
-        # Read Clerk session claims
-        # IMPORTANT: verify the JWT signature in production.
-        claims = jwt.decode(
-            token,
-            options={"verify_signature": False}
-        )
-
+        claims = jwt.decode(token, options={"verify_signature": False})
         userid = claims.get("username")
-        email = claims.get("email")
-        clerk_user_id = claims.get("user_id")
-
-
+        email  = claims.get("email")
     except Exception as e:
         print("CLERK TOKEN ERROR:", e)
         return jsonify(message="Invalid session"), 401
@@ -153,74 +158,73 @@ def upload():
     if not userid:
         return jsonify(message="User information missing"), 401
 
-    print("USER:", userid)
-    print("CLERK ID:", clerk_user_id) 
-    print("EMAIL:", email)
+    # ---- form fields ----
+    r = request.form.to_dict(flat=True)
+    file = request.files.get("file")
+    printer_id = r.get("printer")
+    copies = r.get("copies", "1")
+    mode   = r.get("mode", "color")
 
-    file: FileStorage | None = request.files.get("file")
-    printer_id: str = "LH103"
-    try:
-        check = PrintJob.query.filter_by(USERNAME=userid).first()
-        if check:
-            if check.STATUS == "PENDING":
-                return jsonify(message="You have a pending print job."), 409
-            if check.STATUS == "PRINTING":
-                db.session.delete(check)
-                db.session.commit()
-    except Exception as e:
-        pass
-
-
-    otp = SEND_OTP(email, "Print Job")
-
-    print(file)
-    print("OTP FOR:", userid, "IS:", otp)
-
-    if not file:
-        print("NO FILE PART")
-        return jsonify(message="empty request."), 400
-
-    if not file.filename:
-        print("NO SELECTED FILE")
+    if not file or not file.filename:
         return jsonify(message="No file selected."), 400
+
+    # ---- pending-job guard ----
+    check = PrintJob.query.filter_by(USERNAME=userid).first()
+    if check:
+        if check.STATUS == "PENDING":
+            return jsonify(message="You have a pending print job."), 409
+        if check.STATUS == "PRINTING":
+            db.session.delete(check)
+            db.session.commit()
+
+    # ---- resolve printer ----
+    pObj = Printer.query.filter_by(PRINTER_ID=printer_id).first()
+    if not pObj or not pObj.ENDPOINT_URL:
+        return jsonify(message="Printer not found."), 404
+    purl = pObj.ENDPOINT_URL.rstrip("/")
 
     filename = secure_filename(file.filename)
 
-    print("FILENAME:", filename)
+    # ---- stream the file to the printer ----
+    try:
+        resp = requests.post(
+            f"{purl}/upload",
+            files={"file": (filename, file.stream, file.mimetype)},
+            data={
+                "username": userid,
+                "printer":  printer_id,
+                "copies":   copies,
+                "mode":     mode,
+            },
+            timeout=30,
+        )
+    except requests.RequestException as e:
+        print("PRINTER UPLOAD ERROR:", e)
+        return jsonify(message="Could not reach printer."), 502
 
-    filepath = os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        filename
-    )
+    if resp.status_code != 200:
+        print("PRINTER RESPONSE:", resp.status_code, resp.text)
+        return jsonify(message="Printer rejected the file."), 502
 
-    file.save(filepath)
+    # ---- OTP + PrintJob ----
+    otp = SEND_OTP(email, "Print Job")
+    print("OTP FOR:", userid, "IS:", otp)
 
-    pendingfile = UploadFile(
-        FILE_NAME=filename,
-        FILE_PATH=filepath,
-        USERNAME=userid,
-        PRINTER_ID=printer_id
-    )
+    # logical remote path — the printer owns the actual bytes
+    remote_path = f"{printer_id}/{userid}/{filename}"
 
     printjob = PrintJob(
         FILE_NAME=filename,
-        FILE_PATH=filepath,
+        FILE_PATH=remote_path,      # logical reference, not a local file
         USERNAME=userid,
         OTP_FOR_PRINTING=otp,
         PRINTER_ID=printer_id,
-        STATUS="PENDING"
+        STATUS="PENDING",
     )
-
-    db.session.add(pendingfile)
     db.session.add(printjob)
     db.session.commit()
 
-    if not os.path.exists(filepath):
-        print("FILE NOT SAVED")
-        return jsonify(message="Error in saving file."), 500
-
-    return jsonify(message=True), 200    
-
+    return jsonify(message=True), 200
 
 @app.get("/pending")
 def pending_print():
@@ -290,53 +294,65 @@ def protected():
         "user_id": user_id,
         "username": username
     })
-
-
-@app.post('/triggerprinting')
+@app.post("/triggerprinting")
 def invoke():
     try:
         claims = jwt.decode(
             request.cookies.get("__session"),
-            options={"verify_signature": False}
+            options={"verify_signature": False},
         )
         userid = claims.get("username")
-        data: dict = request.get_json()
-        otp: str = data.get('otp') if data else None
+        data = request.get_json()
+        otp = data.get("otp") if data else None
+
         if not all([userid, otp]):
-            return jsonify(msg='Send All Data'), 417
+            return jsonify(msg="Send All Data"), 417
+
+        printjob = PrintJob.query.filter_by(USERNAME=userid).first()
+        if not printjob:
+            return jsonify(msg="No Pending Print Job Found"), 404
+
+        if str(printjob.OTP_FOR_PRINTING).strip() != str(otp).strip():
+            return jsonify(msg="OTP Incorrect"), 409
+
+        pObj = Printer.query.filter_by(PRINTER_ID=printjob.PRINTER_ID).first()
+        if not pObj or not pObj.ENDPOINT_URL:
+            return jsonify(msg="Printer not found"), 404
+        purl = pObj.ENDPOINT_URL.rstrip("/")
+
+        # ---- tell the printer to start ----
         try:
-            printjob = PrintJob.query.filter_by(USERNAME=userid).first()
-            if not printjob:
-                return jsonify(msg='No Pending Print Job Found'), 404
-            if str(printjob.OTP_FOR_PRINTING).strip() != str(otp).strip():
-                return jsonify(msg='OTP Incorrect'), 409
-    
             resp = requests.post(
-                'https://between-displays-hawaii-efficient.trycloudflare.com/print2',
-                files={'file': open(printjob.FILE_PATH, 'rb')},
-                data={'printer_id': printjob.PRINTER_ID},
+                f"{purl}/print2",
+                json={
+                    "check":    True,
+                    "username": userid,
+                    "printer":  printjob.PRINTER_ID,
+                    "file":     printjob.FILE_NAME,
+                },
+                timeout=10,
             )
-            if resp.status_code != 200:
-                return jsonify(msg='Error in Printing'), 500
-    
-            printjob.STATUS = 'PRINTING'
-            db.session.commit()
-            os.remove(printjob.FILE_PATH)
-            printjob = PrintJob.query.filter_by(USERNAME=userid).first()
-            if printjob:
-                db.session.delete(printjob)
-                db.session.commit()
-                
-            return jsonify(msg='Print Job Invoked'), 200
-        except Exception:
-            print('EXCEPTION')
-            return jsonify(msg='EXCEPTION'), 404
-    
+        except requests.RequestException as e:
+            print("PRINTER INVOKE ERROR:", e)
+            return jsonify(msg="Could not reach printer"), 502
+
+        if resp.status_code != 200:
+            print("PRINTER RESPONSE:", resp.status_code, resp.text)
+            return jsonify(msg="Error in Printing"), 500
+
+        # ---- mark done and clean up the row ----
+        printjob.STATUS = "PRINTING"
+        db.session.commit()
+
+        db.session.delete(printjob)
+        db.session.commit()
+
+        return jsonify(msg="Print Job Invoked"), 200
+
     except Exception as e:
-        print("CLERK TOKEN ERROR:", e)
-        return jsonify(message="Invalid session"), 401    
-
-
+        print("TRIGGER ERROR:", e)
+        return jsonify(message="Invalid session"), 401
+    
 @app.get('/testHTML')
 def testHTML():
     return send_from_directory('templates', 'test.html')
@@ -345,5 +361,5 @@ def testHTML():
 
 if __name__=='__main__':
    
-    app.run(debug=True, threaded=True, host='0.0.0.0',port=5005) 
+    app.run(debug=True, threaded=True, host="0.0.0.0",port=5005) 
     
