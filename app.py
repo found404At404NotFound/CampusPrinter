@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.datastructures import FileStorage
 from models import * 
 from werkzeug.utils import secure_filename
-
+from tasks import print_pdf
 from clerk_backend_api import Clerk
 from clerk_backend_api.security import authenticate_request
 from clerk_backend_api.security.types import AuthenticateRequestOptions
@@ -337,11 +337,13 @@ def invoke():
         return jsonify(message="Invalid session"), 401    
 
 
-if __name__=='__main__':
-   
-    app.run(debug=True, threaded=True, host='0.0.0.0',port=5005) 
-  
-
+@app.get('/testHTML')
+def testHTML():
+    return send_from_directory('templates', 'test.html')
     
 
 
+if __name__=='__main__':
+   
+    app.run(debug=True, threaded=True, host='0.0.0.0',port=5005) 
+    
