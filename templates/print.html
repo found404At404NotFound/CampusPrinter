@@ -40,7 +40,7 @@ h1{margin:0;color:var(--blue-600)}
 .step-progress{display:flex;justify-content:space-between;position:relative;margin:12px 0 18px}
 .step-progress::before{content:'';position:absolute;left:6%;right:6%;top:50%;height:4px;background:#e6eef6;transform:translateY(-50%);z-index:0}
 .progress{position:absolute;left:6%;top:50%;height:4px;background:linear-gradient(90deg,var(--blue),#06b6d4);width:0;transform:translateY(-50%);z-index:1;transition:width .28s}
-.step{width:1/3;display:flex;flex-direction:column;align-items:center;z-index:2}
+.step{width:1/4;display:flex;flex-direction:column;align-items:center;z-index:2}
 .circle{width:36px;height:36px;border-radius:50%;background:#f1f5f9;color:#334155;display:flex;align-items:center;justify-content:center;font-weight:700}
 .circle.active{background:var(--blue);color:white;box-shadow:0 0 0 6px rgba(0,123,255,0.06)}
 .step-label{font-size:12px;margin-top:6px;color:var(--muted);font-weight:600}
@@ -60,6 +60,24 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
 .mode-choice{display:flex;gap:10px}
 .mode-btn{flex:1;padding:12px;border-radius:8px;border:1px solid #dfe8ff;background:#f8fbff;cursor:pointer;text-align:center;font-weight:600;color:#334155}
 .mode-btn.selected{background:var(--blue);color:#fff;border-color:var(--blue)}
+/* printer cards */
+.printer-list{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.printer-card{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:#f8fbff;border:1px solid #dce4f7;border-left:6px solid var(--blue);
+  border-radius:10px;padding:14px 16px;cursor:pointer;transition:box-shadow .15s, border-color .15s;
+}
+.printer-card:hover{box-shadow:0 4px 14px rgba(2,6,23,.08)}
+.printer-card.selected{background:#eaf3ff;border-color:#9fc4ff;box-shadow:0 0 0 3px rgba(0,114,255,0.12)}
+.printer-card.offline{opacity:.55;cursor:not-allowed}
+.printer-name{font-weight:700;color:#0b1b2b}
+.printer-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.printer-status{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px}
+.printer-status.online{background:#e9fff0;color:#1a9e4e}
+.printer-status.offline{background:#ffefef;color:#c02b2b}
+.printer-radio{width:20px;height:20px;border-radius:50%;border:2px solid #cbd8ee;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.printer-card.selected .printer-radio{border-color:var(--blue)}
+.printer-card.selected .printer-radio::after{content:'';width:10px;height:10px;border-radius:50%;background:var(--blue)}
 /* summary */
 .summary{background:#f8fbff;padding:12px;border-radius:8px;margin-top:8px}
 .cta{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
@@ -80,20 +98,32 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
       <div class="logo">CP</div>
       <div>
         <h1>Campus Print</h1>
-        <p class="lead">Upload — Details — OTP</p>
+        <p class="lead">Printer — Upload — Details — OTP</p>
       </div>
       <button class="logout-button" id="logoutButton" type="button">Sign out</button>
     </header>
 
     <div class="step-progress" aria-hidden>
       <div class="progress" id="progress"></div>
-      <div class="step"><div class="circle active" data-step="1">1</div><div class="step-label">Upload</div></div>
-      <div class="step"><div class="circle" data-step="2">2</div><div class="step-label">Details</div></div>
-      <div class="step"><div class="circle" data-step="3">3</div><div class="step-label">OTP</div></div>
+      <div class="step"><div class="circle active" data-step="1">1</div><div class="step-label">Printer</div></div>
+      <div class="step"><div class="circle" data-step="2">2</div><div class="step-label">Upload</div></div>
+      <div class="step"><div class="circle" data-step="3">3</div><div class="step-label">Details</div></div>
+      <div class="step"><div class="circle" data-step="4">4</div><div class="step-label">OTP</div></div>
     </div>
 
-    <!-- STEP 1: UPLOAD -->
+    <!-- STEP 1: PRINTER SELECTION -->
     <div id="step-1" class="panel active">
+      <h2 style="margin:0 0 4px">Select a Printer</h2>
+      <p style="color:var(--muted);margin:0 0 14px;font-size:13px">Choose which lab printer this job should go to.</p>
+      <div class="printer-list" id="printerList"></div>
+      <div id="printerMsg" class="msg error"></div>
+      <div class="cta">
+        <button class="btn" id="toUpload">Next</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: UPLOAD -->
+    <div id="step-2" class="panel">
       <h2 style="margin:0 0 8px">Upload File</h2>
       <div class="upload-area" id="uploadArea">
         <div style="font-size:28px;color:var(--blue)"><i class="fas fa-file-upload"></i></div>
@@ -107,12 +137,13 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
         <div><strong>Type:</strong> <span id="fileType">-</span></div>
       </div>
       <div class="cta">
+        <button class="btn secondary" id="back2">Back</button>
         <button class="btn" id="toDetails">Next</button>
       </div>
     </div>
 
-    <!-- STEP 2: DETAILS -->
-    <div id="step-2" class="panel">
+    <!-- STEP 3: DETAILS -->
+    <div id="step-3" class="panel">
       <h2 style="margin:0 0 8px">Print Details</h2>
       <div class="row">
         <label for="copies">No. of Copies</label>
@@ -126,18 +157,19 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
         </div>
       </div>
       <div class="summary">
+        <div><strong>Printer:</strong> <span id="sumPrinter">-</span></div>
         <div><strong>File:</strong> <span id="sumFileName">-</span></div>
         <div><strong>Copies:</strong> <span id="sumCopies">1</span></div>
         <div><strong>Mode:</strong> <span id="sumMode">Color</span></div>
       </div>
       <div class="cta">
-        <button class="btn secondary" id="back2">Back</button>
+        <button class="btn secondary" id="back3">Back</button>
         <button class="btn" id="toOtp">Next</button>
       </div>
     </div>
 
-    <!-- STEP 3: OTP -->
-    <div id="step-3" class="panel">
+    <!-- STEP 4: OTP -->
+    <div id="step-4" class="panel">
       <h2 style="margin:0 0 8px">Enter OTP</h2>
       <p style="color:var(--muted)">Enter the OTP sent to your registered email to start the print job.</p>
       <div class="row" style="justify-content:center">
@@ -145,7 +177,7 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
       </div>
       <div id="otpMsg" class="msg"></div>
       <div class="cta" style="justify-content:center">
-        <button class="btn secondary" id="back3">Back</button>
+        <button class="btn secondary" id="back4">Back</button>
         <button class="btn secondary" id="cancelPrintBtn" type="button">Cancel print</button>
         <button class="btn" id="submitOtpBtn">Submit OTP</button>
       </div>
@@ -156,12 +188,19 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
 
 <script>
 //backend config
-const BASE = "https://handbook-comparison-preliminary-thompson.trycloudflare.com";
+const BASE = "https://printer.mangojam.me";
 const UPLOAD_ENDPOINT = BASE + "/upload";
 const PRINT_OTP_ENDPOINT = BASE + "/triggerprinting";
 const PENDING_ENDPOINT = BASE + "/pending";
 const CANCEL_ENDPOINT = BASE + "/cancel";
 const USER_ID = "181818";
+
+// Hardcoded fallback for this block's 3 lab printers — used only if the
+// /printers endpoint below isn't reachable yet. Once your backend guy wires
+// it up, this list gets replaced by real live/offline status from the DB,
+// which is exactly what gets toggled from admin.html.
+let PRINTERS = [];
+const PRINTERS_ENDPOINT = BASE + "/printers";
 
 async function logout() {
   const button = document.getElementById('logoutButton');
@@ -191,15 +230,17 @@ async function clerkAuthHeaders() {
 }
 
 let currentStep = 1;
-const totalSteps = 3;
+const totalSteps = 4;
 const selected = {
+  printer: null,
+  printerName: null,
   file: null,
   fileName: null,
   copies: 1,
   mode: 'color'
 };
 
-const panels = {1:document.getElementById('step-1'),2:document.getElementById('step-2'),3:document.getElementById('step-3')};
+const panels = {1:document.getElementById('step-1'),2:document.getElementById('step-2'),3:document.getElementById('step-3'),4:document.getElementById('step-4')};
 const circles = Array.from(document.querySelectorAll('.circle'));
 const progressEl = document.getElementById('progress');
 
@@ -208,8 +249,69 @@ function showStep(n){
   for(let i=1;i<=totalSteps;i++) panels[i].classList.toggle('active', i===n);
   circles.forEach(c=> c.classList.toggle('active', Number(c.dataset.step) <= n ));
   progressEl.style.width = ((n-1)/(totalSteps-1))*100 + '%';
-  if(n===2) populateSummary();
+  if(n===3) populateSummary();
 }
+
+// Step 1: Printer selection
+function renderPrinters(){
+  const list = document.getElementById('printerList');
+  list.innerHTML = '';
+  PRINTERS.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'printer-card' + (selected.printer === p.id ? ' selected' : '') + (!p.online ? ' offline' : '');
+    card.innerHTML = `
+      <div class="printer-radio"></div>
+      <div style="flex:1">
+        <div class="printer-name">${p.name}</div>
+        <div class="printer-sub">${p.sub}</div>
+      </div>
+      <div class="printer-status ${p.online ? 'online' : 'offline'}">${p.online ? 'Online' : 'Offline'}</div>
+    `;
+    if(p.online){
+      card.addEventListener('click', () => {
+        selected.printer = p.id;
+        selected.printerName = p.name;
+        document.getElementById('printerMsg').textContent = '';
+        renderPrinters();
+      });
+    }
+    list.appendChild(card);
+  });
+}
+
+async function loadPrinters(){
+  const printerMsg = document.getElementById('printerMsg');
+  try {
+    const res = await fetch(PRINTERS_ENDPOINT, { credentials: 'include' });
+    if(!res.ok) throw new Error('Server responded ' + res.status);
+    const data = await res.json();
+    if(Array.isArray(data) && data.length){
+      PRINTERS = data;
+      printerMsg.textContent = ''; 
+    } else {
+      PRINTERS = [];
+      printerMsg.textContent = 'No printers available from the backend.';
+    }
+  } catch(err){
+    console.warn('Could not load live printer status:', err.message);
+    PRINTERS = [];
+    printerMsg.textContent = 'Unable to fetch backend.';
+  }
+  renderPrinters();
+}
+
+loadPrinters();
+// Keep printer status fresh in case one goes offline while the student is
+// still on this page (e.g. lab incharge flips it off from admin.html).
+setInterval(loadPrinters, 8000);
+
+document.getElementById('toUpload').addEventListener('click', ()=>{
+  if(!selected.printer){
+    document.getElementById('printerMsg').textContent = 'Please select a printer to continue.';
+    return;
+  }
+  showStep(2);
+});
 
 async function restorePendingPrint() {
   try {
@@ -236,12 +338,17 @@ async function restorePendingPrint() {
     const hasPendingPrint = pending.pending === true || pending.peending === true;
     if (hasPendingPrint) {
       selected.fileName = pending.file_name || pending.fileName || 'Uploaded file';
+      selected.printer = pending.printer_id || pending.printer || selected.printer;
+      const matchedPrinter = PRINTERS.find(p => p.id === selected.printer);
+      selected.printerName = matchedPrinter ? matchedPrinter.name : (pending.printer_name || 'Selected printer');
+      renderPrinters();
       document.getElementById('fileName').textContent = selected.fileName;
       document.getElementById('fileSize').textContent = pending.file_size || '-';
       document.getElementById('fileType').textContent = pending.file_type || '-';
       document.getElementById('filePreview').classList.remove('hidden');
       document.getElementById('sumFileName').textContent = selected.fileName;
-      showStep(3);
+      document.getElementById('sumPrinter').textContent = selected.printerName;
+      showStep(4);
     } else {
       showStep(1);
     }
@@ -251,13 +358,15 @@ async function restorePendingPrint() {
   }
 }
 
-// Step 1:
+// Step 2: Upload
 function formatBytes(bytes){
   if(!bytes) return '-';
   if(bytes<1024) return bytes + ' bytes';
   if(bytes<1048576) return (bytes/1024).toFixed(1) + ' KB';
   return (bytes/1048576).toFixed(1) + ' MB';
 }
+
+document.getElementById('back2').addEventListener('click', ()=> showStep(1));
 
 document.getElementById('uploadArea').addEventListener('click', ()=> document.getElementById('fileInput').click());
 document.getElementById('fileInput').addEventListener('change', (e)=>{
@@ -273,10 +382,10 @@ document.getElementById('fileInput').addEventListener('change', (e)=>{
 
 document.getElementById('toDetails').addEventListener('click', ()=>{
   if(!selected.file){ alert('Please upload a file first'); return; }
-  showStep(2);
+  showStep(3);
 });
 
-// Step 2:
+// Step 3: Details
 document.getElementById('copies').addEventListener('input', (e)=>{
   selected.copies = Math.max(1, parseInt(e.target.value) || 1);
   document.getElementById('sumCopies').textContent = selected.copies;
@@ -292,12 +401,13 @@ document.querySelectorAll('.mode-btn').forEach(btn=>{
 });
 
 function populateSummary(){
+  document.getElementById('sumPrinter').textContent = selected.printerName || '-';
   document.getElementById('sumFileName').textContent = selected.fileName || '-';
   document.getElementById('sumCopies').textContent = selected.copies;
   document.getElementById('sumMode').textContent = selected.mode === 'color' ? 'Color' : 'Black & White';
 }
 
-document.getElementById('back2').addEventListener('click', ()=> showStep(1));
+document.getElementById('back3').addEventListener('click', ()=> showStep(2));
 
 document.getElementById('toOtp').addEventListener('click', async ()=>{
   const nextBtn = document.getElementById('toOtp');
@@ -306,6 +416,7 @@ document.getElementById('toOtp').addEventListener('click', async ()=>{
 
   const fd = new FormData();
   fd.append('file', selected.file);
+  fd.append('printer', selected.printer);
   fd.append('copies', selected.copies);
   fd.append('mode', selected.mode);
   fd.append('userid', USER_ID);
@@ -322,7 +433,7 @@ document.getElementById('toOtp').addEventListener('click', async ()=>{
       throw new Error(`Server error: ${res.status} - ${text}`);
     }
     selected.fileName = selected.file.name;
-    showStep(3);
+    showStep(4);
   } catch(err){
     alert('Upload failed: ' + err.message);
   } finally {
@@ -331,8 +442,8 @@ document.getElementById('toOtp').addEventListener('click', async ()=>{
   }
 });
 
-// Step 3:
-document.getElementById('back3').addEventListener('click', ()=> showStep(2));
+// Step 4: OTP
+document.getElementById('back4').addEventListener('click', ()=> showStep(3));
 
 document.getElementById('cancelPrintBtn').addEventListener('click', async ()=>{
   if(!window.confirm('Are you sure you want to cancel this print job?')) return;
@@ -349,11 +460,14 @@ document.getElementById('cancelPrintBtn').addEventListener('click', async ()=>{
 
     selected.file = null;
     selected.fileName = null;
+    selected.printer = null;
+    selected.printerName = null;
     document.getElementById('fileInput').value = '';
     document.getElementById('filePreview').classList.add('hidden');
     document.getElementById('otpInput').value = '';
     document.getElementById('otpInput').disabled = false;
     document.getElementById('otpMsg').textContent = '';
+    renderPrinters();
     showStep(1);
   } catch (error) {
     alert(error.message);
@@ -389,7 +503,8 @@ document.getElementById('submitOtpBtn').addEventListener('click', async ()=>{
       },
       body: JSON.stringify({
         otp: enteredOTP,
-        userid: USER_ID
+        userid: USER_ID,
+        printer: selected.printer
       })
     });
 
