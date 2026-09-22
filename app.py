@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.datastructures import FileStorage
 from models import * 
 from werkzeug.utils import secure_filename
-from tasks import print_pdf
+
 from clerk_backend_api import Clerk
 from clerk_backend_api.security import authenticate_request
 from clerk_backend_api.security.types import AuthenticateRequestOptions
