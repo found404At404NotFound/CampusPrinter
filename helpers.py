@@ -8,7 +8,7 @@ load_dotenv()
 
 import resend
 import random
-def SEND_OTP(email, type):
+def SEND_OTP(email,user,printer):
     otp = random.randint(100000, 999999)
 
     
@@ -21,9 +21,9 @@ def SEND_OTP(email, type):
         "template": {
             "id": "print-verification-code",
             "variables": {
-                "first_name": "User",
-                "printer_name": "CSE Lab Printer",
-                "expiry_minutes": '10',
+                "first_name": f"{user}",
+                "printer_name": f"{printer}",
+                
                 "otp_code": f"{otp}",
                 "company_name": "CampusPrinter",
                 "company_address": "CVR College of Engineering"
