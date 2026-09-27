@@ -27,12 +27,17 @@
   font-family:"Inter",system-ui,"Segoe UI",Roboto,Arial,sans-serif;
 }
 *{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;display:flex;min-height:100vh;background:#fff;color:#0b1b2b}
+html,body{height:100%;-webkit-text-size-adjust:100%}
+body{
+  margin:0;display:flex;min-height:100vh;background:#fff;color:#0b1b2b;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
 .split{display:flex;width:100%;min-height:100vh}
 
 /* ---------- LEFT: Clerk mounts here ---------- */
-.left{flex:1;min-width:340px;background:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px 24px}
+.left{flex:1;min-width:0;background:#fff;display:flex;flex-direction:column;
+      justify-content:center;align-items:center;padding:48px 24px}
 .form-wrap{width:100%;max-width:400px}
 .brand-row{text-align:center;margin-bottom:26px}
 .brand-title{font-size:28px;font-weight:800;color:#0b1b2b;letter-spacing:-0.5px}
@@ -46,32 +51,41 @@ body{margin:0;display:flex;min-height:100vh;background:#fff;color:#0b1b2b}
 /* signed-in view */
 #signedIn{display:none;text-align:center}
 #signedIn h2{font-size:19px;margin:0 0 12px}
-#userInfo{margin:16px 0;padding:14px;background:#f8fbff;border-radius:10px;text-align:left;font-size:13px;line-height:1.7;border:1px solid #e6eef6}
-#goApp{display:inline-block;margin-top:6px;padding:.65rem 1.2rem;border-radius:9px;background:var(--blue);color:#fff;text-decoration:none;font-weight:700;font-size:14px}
+#userInfo{margin:16px 0;padding:14px;background:#f8fbff;border-radius:10px;
+         text-align:left;font-size:13px;line-height:1.7;border:1px solid #e6eef6}
+#goApp{display:inline-block;margin-top:6px;padding:.75rem 1.2rem;border-radius:9px;
+      background:var(--blue);color:#fff;text-decoration:none;font-weight:700;font-size:15px}
 #goApp:hover{background:var(--blue-600)}
-.logout-button{margin-top:10px;padding:.65rem 1.2rem;border:1px solid #dce7ff;border-radius:9px;background:#fff;color:#b42318;font-weight:700;cursor:pointer;font-size:14px}
+.logout-button{margin-top:10px;padding:.75rem 1.2rem;border:1px solid #dce7ff;
+              border-radius:9px;background:#fff;color:#b42318;font-weight:700;
+              cursor:pointer;font-size:15px;min-height:44px}
 
-/* ---------- RIGHT: brand panel (matches print.html's blue gradient) ---------- */
+/* ---------- RIGHT: brand panel ---------- */
 .right{
-  flex:1;min-width:340px;
+  flex:1;min-width:0;
   background:linear-gradient(135deg,#0072ff 0%, #00c6ff 100%);
-  color:#fff;padding:56px 48px;display:flex;flex-direction:column;justify-content:space-between;
-  overflow:hidden;
+  color:#fff;padding:56px 48px;display:flex;flex-direction:column;
+  justify-content:space-between;overflow:hidden;
 }
 .right .top{display:flex;align-items:center;gap:12px}
-.right .logo{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;font-weight:700}
+.right .logo{width:46px;height:46px;border-radius:12px;
+            background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);
+            display:flex;align-items:center;justify-content:center;font-weight:700}
 .right .logo i{font-size:18px}
 .right .name{font-weight:700;font-size:17px}
 .right .tag{font-size:12px;color:rgba(255,255,255,0.8)}
-.headline{font-size:30px;line-height:1.28;margin:40px 0 10px;font-weight:700;max-width:460px;color:#fff}
+.headline{font-size:30px;line-height:1.28;margin:40px 0 10px;font-weight:700;
+         max-width:460px;color:#fff}
 .headline .accent{color:#0b1b2b;background:#fff;padding:0 6px;border-radius:6px}
 .desc{color:rgba(255,255,255,0.9);font-size:15px;max-width:440px;line-height:1.6;margin-bottom:28px}
 .features{display:flex;flex-direction:column;gap:12px;margin-bottom:8px}
 .feature{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:#fff}
 .feature i{color:#fff;margin-top:2px}
-.queue{margin-top:32px;background:#f8fbff;border:1px solid #dce4f7;border-left:6px solid #0a58ca;border-radius:12px;padding:14px 16px;max-width:420px;box-shadow:0 8px 24px rgba(2,6,23,0.12)}
+.queue{margin-top:32px;background:#f8fbff;border:1px solid #dce4f7;border-left:6px solid #0a58ca;
+      border-radius:12px;padding:14px 16px;max-width:420px;box-shadow:0 8px 24px rgba(2,6,23,0.12)}
 .queue-title{font-size:12px;color:#5b6b85;margin-bottom:10px;font-weight:600}
-.ticket{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;border-top:1px solid #e6eef6;color:#0b1b2b}
+.ticket{display:flex;justify-content:space-between;align-items:center;padding:7px 0;
+       font-size:13px;border-top:1px solid #e6eef6;color:#0b1b2b}
 .ticket:first-of-type{border-top:0}
 .ticket .id{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;color:#0a58ca}
 .ticket .stat{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600}
@@ -107,12 +121,11 @@ body{margin:0;display:flex;min-height:100vh;background:#fff;color:#0b1b2b}
   content:'';position:absolute;top:10px;left:14px;right:14px;height:5px;
   border-radius:3px;background:#0072ff;opacity:.35;
 }
-.printer-led{position:absolute;top:11px;right:14px;width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:blink 1.6s ease-in-out infinite}
+.printer-led{position:absolute;top:11px;right:14px;width:6px;height:6px;border-radius:50%;
+            background:#22c55e;box-shadow:0 0 8px #22c55e;animation:blink 1.6s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.paper-slot{
-  position:absolute;left:22px;right:22px;top:-84px;height:84px;
-  overflow:hidden;z-index:1;
-}
+.paper-slot{position:absolute;left:22px;right:22px;top:-84px;height:84px;
+           overflow:hidden;z-index:1}
 .paper{
   position:absolute;left:0;right:0;bottom:0;height:84px;background:#fff;
   border-radius:2px 2px 0 0;box-shadow:0 6px 16px rgba(2,6,23,.12);
@@ -139,11 +152,80 @@ body{margin:0;display:flex;min-height:100vh;background:#fff;color:#0b1b2b}
   .floaters i, .paper{animation:none}
 }
 
-@media(max-width:860px){
-  .split{flex-direction:column}
-  .right{order:-1;padding:32px}
-  .headline{font-size:24px}
+/* =========================================================
+   MOBILE (phones, portrait) — brand panel on top, form below
+   ========================================================= */
+@media (max-width:860px){
+  body{display:block}
+  .split{flex-direction:column;min-height:100vh}
+
+  .right{
+    order:-1;
+    flex:none;
+    padding:28px 20px 32px;
+    border-radius:0 0 24px 24px;
+  }
+  .right .top{gap:10px}
+  .right .logo{width:40px;height:40px}
+  .right .logo i{font-size:16px}
+  .right .name{font-size:16px}
+  .right .tag{font-size:11px}
+
+  .headline{
+    font-size:22px;line-height:1.3;
+    margin:20px 0 8px;max-width:none;
+  }
+  .desc{
+    font-size:14px;line-height:1.55;margin-bottom:18px;max-width:none;
+  }
+  .features{gap:10px}
+  .feature{font-size:13px;gap:10px}
+
+  /* hide purely decorative animated scene on phones */
+  .printer-scene{display:none}
+
+  /* hide the live-queue card on phones (it's already hidden by older rule) */
   .queue{display:none}
+
+  .blocks{font-size:11px;margin-top:18px}
+
+  /* form panel */
+  .left{
+    flex:none;
+    padding:32px 20px calc(32px + env(safe-area-inset-bottom));
+    justify-content:flex-start;
+  }
+  .form-wrap{max-width:100%}
+  .brand-row{display:none}          /* brand is already shown at top of the blue panel */
+  .brand-title{display:none}
+
+  #clerk-mount{min-height:auto}
+  #loading{padding:24px 0;font-size:13px}
+  .foot{font-size:12px;margin-top:14px}
+
+  /* Clerk sign-in / sign-up widget — make it look intentional on a phone */
+  .cl-card,
+  .cl-rootBox,
+  [class^="cl-"] {
+    max-width:100% !important;
+  }
+
+  /* inputs & buttons rendered by Clerk need comfortable tap targets */
+  .cl-formFieldInput,
+  .cl-formButtonPrimary,
+  .cl-socialButtonsBlockButton,
+  .cl-footerActionLink,
+  .cl-identityPreviewEditButton {
+    min-height:44px !important;
+    font-size:16px !important;    /* prevents iOS auto-zoom */
+  }
+  .cl-headerTitle{font-size:20px !important}
+  .cl-formButtonPrimary{font-size:15px !important;font-weight:700 !important}
+
+  /* signed-in card */
+  #signedIn h2{font-size:17px}
+  #userInfo{font-size:13px;padding:12px;margin:14px 0}
+  #goApp,.logout-button{width:100%;text-align:center;display:block}
 }
 </style>
 </head>
