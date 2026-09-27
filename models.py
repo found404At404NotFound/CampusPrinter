@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
-
+from datetime import datetime, timezone
 
 class PendingUser(db.Model):
     ID = db.Column(db.Integer, primary_key=True)
@@ -55,18 +55,28 @@ w
 class Printer(db.Model):
     ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
-    
     PRINTER_NAME = db.Column(db.String(100), nullable=False)
     BLOCK = db.Column(db.String(50), nullable=False)
     PRINTER_ID = db.Column(db.String(15), nullable=False, unique=True)
     PRINTER_LOCATION = db.Column(db.String(200), nullable=False)
     ENDPOINT_URL = db.Column(db.String(300), nullable=False)
     PASSWORD = db.Column(db.String(256), nullable=False)
+
     AVAILABLE = db.Column(db.Boolean, default=True)
-
     TOTAL_PRINTS = db.Column(db.Integer, default=0)
+    ALLOW_OVERWRITE = db.Column(db.Boolean, default=False)
 
-    
+    LAST_PING = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc)
+    )
+    STATUS_CODE = db.Column(
+        db.String(3),nullable=True,
+        default="500"
+    )
+
+    #.TaPw%w@UxRBR4. found404
 
 
 
