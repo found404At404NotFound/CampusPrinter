@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Get New Print</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script
   defer
   crossorigin="anonymous"
@@ -30,9 +32,9 @@ body{
   background:linear-gradient(135deg,#0072ff 0%, #00c6ff 100%);
   display:flex;justify-content:center;padding:18px;color:#0b1b2b;
 }
-.wrap{width:100%;max-width:760px}
+.wrap{width:100%;max-width:1000px}
 .card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 10px 40px rgba(2,6,23,0.12)}
-header{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+header{display:flex;gap:14px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
 .logo{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,var(--blue),#06b6d4);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
 h1{margin:0;color:var(--blue-600)}
 .lead{margin:0;color:var(--muted);font-size:13px}
@@ -78,6 +80,26 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
 .printer-radio{width:20px;height:20px;border-radius:50%;border:2px solid #cbd8ee;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .printer-card.selected .printer-radio{border-color:var(--blue)}
 .printer-card.selected .printer-radio::after{content:'';width:10px;height:10px;border-radius:50%;background:var(--blue)}
+/* document preview */
+.preview-section{margin-top:6px;margin-bottom:18px}
+.preview-section h3{font-size:16px;margin:0 0 8px;font-weight:700}
+.preview-note{font-size:13px;color:var(--muted);background:#f8fbff;border:1px solid #e6eef6;border-radius:8px;padding:12px 14px}
+.pdf-thumb-grid{
+  display:flex;flex-wrap:wrap;gap:18px;max-height:640px;overflow-y:auto;
+  padding:20px;background:#f8fbff;border:1px solid #e6eef6;border-radius:12px;margin-top:8px;
+  justify-content:flex-start;
+}
+.pdf-thumb{
+  width:230px;border:3px solid transparent;border-radius:10px;background:#fff;padding:10px;
+  text-align:center;box-shadow:0 4px 16px rgba(2,6,23,.14);cursor:default;transition:border-color .12s;
+}
+.pdf-thumb canvas{width:100%;display:block;border-radius:5px}
+.pdf-thumb-label{font-size:13px;color:var(--muted);margin-top:8px;font-weight:700}
+.pdf-thumb.thumb-selected{border-color:var(--blue)}
+.page-select-row{align-items:flex-start !important}
+.page-select-options{display:flex;flex-direction:column;gap:8px;flex:1}
+.page-select-options label.opt{font-weight:400;display:flex;align-items:center;gap:6px;font-size:14px}
+#pageRangeInput{margin-top:2px}
 /* summary */
 .summary{background:#f8fbff;padding:12px;border-radius:8px;margin-top:8px}
 .cta{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
@@ -89,6 +111,53 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
 .msg.error{color:#b90000}
 .msg.success{color:green}
 .logout-button{margin-left:auto;padding:9px 13px;border:1px solid #ffd1cc;border-radius:8px;background:#fff;color:#b42318;font-weight:700;cursor:pointer}
+
+/* ---------- Step 4 arrival warning ---------- */
+.arrival-warning{
+  background:#fff1f0;
+  border:2px solid #d92d20;
+  border-left-width:8px;
+  border-radius:12px;
+  padding:18px 18px 20px;
+  margin:6px 0 4px;
+  box-shadow:0 8px 24px rgba(217,45,32,0.12);
+}
+.arrival-warning-icon{
+  width:38px;height:38px;border-radius:50%;
+  background:#d92d20;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:22px;line-height:1;
+  margin-bottom:12px;
+}
+.arrival-warning-title{
+  font-size:26px;
+  font-weight:900;
+  color:#b42318;
+  letter-spacing:.5px;
+  line-height:1.15;
+  margin:0 0 10px;
+  text-transform:uppercase;
+}
+.arrival-warning-body{
+  color:#7a271a;
+  font-size:14px;
+  line-height:1.6;
+}
+.arrival-warning-body strong{color:#b42318}
+
+@media(max-width:600px){
+  body{padding:10px}
+  .card{padding:14px}
+  header{gap:10px}
+  .logo{width:44px;height:44px;font-size:13px}
+  h1{font-size:17px}
+  .row label{min-width:100%;margin-bottom:4px}
+  .pdf-thumb{width:160px}
+  .pdf-thumb-grid{max-height:420px;padding:12px;gap:12px}
+  .arrival-warning-title{font-size:22px}
+  .arrival-warning-body{font-size:13px}
+  .arrival-warning{padding:14px}
+}
 </style>
 </head>
 <body>
@@ -145,6 +214,13 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
     <!-- STEP 3: DETAILS -->
     <div id="step-3" class="panel">
       <h2 style="margin:0 0 8px">Print Details</h2>
+
+      <div class="preview-section">
+        <h3>Document preview</h3>
+        <div id="pdfThumbGrid" class="pdf-thumb-grid hidden"></div>
+        <div id="previewNote" class="preview-note hidden"></div>
+      </div>
+
       <div class="row">
         <label for="copies">No. of Copies</label>
         <input type="number" id="copies" min="1" value="1"/>
@@ -156,9 +232,19 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
           <div class="mode-btn" data-mode="bw">Black & White</div>
         </div>
       </div>
+      <div class="row page-select-row" id="pageSelectRow">
+        <label>Pages to print</label>
+        <div class="page-select-options">
+          <label class="opt"><input type="radio" name="pageMode" id="pageAllRadio" checked> All pages</label>
+          <label class="opt"><input type="radio" name="pageMode" id="pageCustomRadio"> Custom range</label>
+          <input type="text" id="pageRangeInput" placeholder="e.g. 1-3,5,8-10" disabled/>
+          <div id="pageRangeMsg" class="msg error" style="margin-top:0"></div>
+        </div>
+      </div>
       <div class="summary">
         <div><strong>Printer:</strong> <span id="sumPrinter">-</span></div>
         <div><strong>File:</strong> <span id="sumFileName">-</span></div>
+        <div><strong>Pages:</strong> <span id="sumPages">-</span></div>
         <div><strong>Copies:</strong> <span id="sumCopies">1</span></div>
         <div><strong>Mode:</strong> <span id="sumMode">Color</span></div>
       </div>
@@ -170,37 +256,69 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
 
     <!-- STEP 4: OTP -->
     <div id="step-4" class="panel">
-      <h2 style="margin:0 0 8px">Enter OTP</h2>
-      <p style="color:var(--muted)">Enter the OTP sent to your registered email to start the print job.</p>
-      <div class="row" style="justify-content:center">
-        <input type="text" id="otpInput" class="otp-input" maxlength="7" placeholder="e.g. 2323232"/>
+
+      <!-- PHASE A: "Go to lab" warning. Shown first. No OTP input. -->
+      <div id="arrivalGate">
+        <div class="arrival-warning">
+          <div class="arrival-warning-icon">!</div>
+          <div class="arrival-warning-title">GO TO LAB <span id="arrivalLabNo">—</span></div>
+          <div class="arrival-warning-body">
+            The print will <strong>start immediately</strong> once the OTP is entered.<br/>
+            To avoid your print being lost, only enter the OTP once you've arrived at the lab.
+          </div>
+        </div>
+        <p style="color:var(--muted);text-align:center;margin:14px 0 0">
+          Once you're standing at the printer, tap the button below.
+        </p>
+        <div class="cta" style="justify-content:center">
+          <button class="btn" id="arrivedBtn" type="button">I have arrived at the lab</button>
+        </div>
+        <div class="cta" style="justify-content:center">
+          <button class="btn secondary" id="cancelPrintBtnGate" type="button">Cancel print</button>
+        </div>
       </div>
-      <div id="otpMsg" class="msg"></div>
-      <div class="cta" style="justify-content:center">
-        <button class="btn secondary" id="back4">Back</button>
-        <button class="btn secondary" id="cancelPrintBtn" type="button">Cancel print</button>
-        <button class="btn" id="submitOtpBtn">Submit OTP</button>
+
+      <!-- PHASE B: actual OTP entry. Hidden until the user confirms arrival. -->
+      <div id="otpEntry" class="hidden">
+        <h2 style="margin:0 0 8px">Enter OTP</h2>
+        <p style="color:var(--muted)">Enter the OTP sent to your registered email to start the print job.</p>
+        <div class="row" style="justify-content:center">
+          <input type="text" id="otpInput" class="otp-input" maxlength="7" placeholder="e.g. 2323232"/>
+        </div>
+        <div id="otpMsg" class="msg"></div>
+        <div class="cta" style="justify-content:center">
+          <button class="btn secondary" id="cancelPrintBtn" type="button">Cancel print</button>
+          <button class="btn" id="submitOtpBtn">Submit OTP</button>
+        </div>
       </div>
+
     </div>
 
   </div>
 </div>
 
 <script>
-//backend config
-const BASE = "https://printer.found404.me";
-const UPLOAD_ENDPOINT = BASE + "/upload";
-const PRINT_OTP_ENDPOINT = BASE + "/triggerprinting";
-const PENDING_ENDPOINT = BASE + "/pending";
-const CANCEL_ENDPOINT = BASE + "/cancel";
-const USER_ID = "181818";
+/* ------------------------------------------------------------------ *
+ *  Backend config
+ *  Two separate backends:
+ *    JOB_BASE     → upload / otp / pending / cancel  (mangojam.me)
+ *    PRINTER_BASE → printer directory                 (Appwrite fn)
+ * ------------------------------------------------------------------ */
+const JOB_BASE     = "https://printer.found404.me";
+const UPLOAD_ENDPOINT    = JOB_BASE + "/upload";
+const PRINT_OTP_ENDPOINT = JOB_BASE + "/triggerprinting";
+const PENDING_ENDPOINT   = JOB_BASE + "/pending";
+const CANCEL_ENDPOINT    = JOB_BASE + "/cancel";
 
-// Hardcoded fallback for this block's 3 lab printers — used only if the
-// /printers endpoint below isn't reachable yet. Once your backend guy wires
-// it up, this list gets replaced by real live/offline status from the DB,
-// which is exactly what gets toggled from admin.html.
+const PRINTER_BASE      = "https://printer-endpoint.sgp.appwrite.run";
+const PRINTERS_ENDPOINT = PRINTER_BASE + "/";   // root returns {status, printers:[...]}
+
+const FALLBACK_PRINTERS = [];
 let PRINTERS = [];
-const PRINTERS_ENDPOINT = BASE + "/printers";
+
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+}
 
 async function logout() {
   const button = document.getElementById('logoutButton');
@@ -229,6 +347,17 @@ async function clerkAuthHeaders() {
   return {Authorization: `Bearer ${token}`};
 }
 
+// Every student gets their own real Clerk user ID here instead of a
+// hardcoded placeholder — otherwise every job would look like it came
+// from the same fake account.
+async function getCurrentUserId() {
+  await Clerk.load({ui: {ClerkUI: window.__internal_ClerkUICtor}});
+  if (!Clerk.isSignedIn || !Clerk.user) {
+    throw new Error('Not signed in — please sign in again.');
+  }
+  return Clerk.user.id;
+}
+
 let currentStep = 1;
 const totalSteps = 4;
 const selected = {
@@ -237,8 +366,13 @@ const selected = {
   file: null,
   fileName: null,
   copies: 1,
-  mode: 'color'
+  mode: 'color',
+  pdfNumPages: null,
+  pageMode: 'all',
+  pageRangeRaw: '',
+  pageSelection: 'all'
 };
+let lastPreviewedFile = null;
 
 const panels = {1:document.getElementById('step-1'),2:document.getElementById('step-2'),3:document.getElementById('step-3'),4:document.getElementById('step-4')};
 const circles = Array.from(document.querySelectorAll('.circle'));
@@ -249,16 +383,29 @@ function showStep(n){
   for(let i=1;i<=totalSteps;i++) panels[i].classList.toggle('active', i===n);
   circles.forEach(c=> c.classList.toggle('active', Number(c.dataset.step) <= n ));
   progressEl.style.width = ((n-1)/(totalSteps-1))*100 + '%';
-  if(n===3) populateSummary();
+  if(n===3){
+    renderDocPreview();
+    populateSummary();
+  }
+  if(n===4){
+    currentLabNo = selected.printer || '—';
+    showArrivalGate();
+  }
 }
 
-// Step 1: Printer selection
+/* ------------------------------------------------------------------ *
+ *  Step 1: Printer selection
+ * ------------------------------------------------------------------ */
 function renderPrinters(){
   const list = document.getElementById('printerList');
   list.innerHTML = '';
+  if(!PRINTERS.length) return;
+
   PRINTERS.forEach(p => {
     const card = document.createElement('div');
-    card.className = 'printer-card' + (selected.printer === p.id ? ' selected' : '') + (!p.online ? ' offline' : '');
+    card.className = 'printer-card'
+      + (selected.printer === p.id ? ' selected' : '')
+      + (!p.online ? ' offline' : '');
     card.innerHTML = `
       <div class="printer-radio"></div>
       <div style="flex:1">
@@ -285,25 +432,45 @@ async function loadPrinters(){
     const res = await fetch(PRINTERS_ENDPOINT, { credentials: 'include' });
     if(!res.ok) throw new Error('Server responded ' + res.status);
     const data = await res.json();
-    if(Array.isArray(data) && data.length){
-      PRINTERS = data;
-      printerMsg.textContent = ''; 
+    const printerArray = Array.isArray(data) ? data : (data.printers || []);
+
+    if(printerArray.length){
+      PRINTERS = printerArray.map(p => ({
+        id: p.printer_id,
+        name: p.printer_name,
+        sub: `${p.block || 'N/A'} • ${p.location || ''}`,
+        online: p.available === true
+      }));
+      printerMsg.textContent = '';
     } else {
-      PRINTERS = [];
-      printerMsg.textContent = 'No printers available from the backend.';
+      PRINTERS = FALLBACK_PRINTERS;
+      printerMsg.textContent = 'No printers returned by the backend.';
     }
+    // Bug fix note: only auto-bounce the user back to step 1 if the printer
+    // they had selected actually went offline mid-flow. This check is
+    // unrelated to the back-button deadlock fix below, which is about
+    // Step 4 -> Step 3 navigation specifically.
+    if (selected.printer && currentStep > 1) {
+      const currentPrinter = PRINTERS.find(p => p.id === selected.printer);
+      if (!currentPrinter || !currentPrinter.online) {
+        alert('The printer you selected has gone offline. Please choose another printer.');
+        selected.printer = null;
+        selected.printerName = null;
+        renderPrinters();
+        showStep(1);
+      }
+    }
+
   } catch(err){
-    console.warn('Could not load live printer status:', err.message);
-    PRINTERS = [];
-    printerMsg.textContent = 'Unable to fetch backend.';
+    console.warn('Printer fetch failed:', err);
+    PRINTERS = FALLBACK_PRINTERS;
+    printerMsg.textContent = 'Could not reach printer directory: ' + err.message;
   }
   renderPrinters();
 }
 
 loadPrinters();
-// Keep printer status fresh in case one goes offline while the student is
-// still on this page (e.g. lab incharge flips it off from admin.html).
-setInterval(loadPrinters, 8000);
+setInterval(loadPrinters, 1000);
 
 document.getElementById('toUpload').addEventListener('click', ()=>{
   if(!selected.printer){
@@ -313,10 +480,11 @@ document.getElementById('toUpload').addEventListener('click', ()=>{
   showStep(2);
 });
 
+/* ------------------------------------------------------------------ *
+ *  Pending print restore
+ * ------------------------------------------------------------------ */
 async function restorePendingPrint() {
   try {
-    // The backend identifies the user from the Clerk session cookie.
-    // The bearer token is included when available for deployments that require it.
     let authHeaders = {};
     try {
       authHeaders = await clerkAuthHeaders();
@@ -358,7 +526,9 @@ async function restorePendingPrint() {
   }
 }
 
-// Step 2: Upload
+/* ------------------------------------------------------------------ *
+ *  Step 2: Upload
+ * ------------------------------------------------------------------ */
 function formatBytes(bytes){
   if(!bytes) return '-';
   if(bytes<1024) return bytes + ' bytes';
@@ -374,6 +544,16 @@ document.getElementById('fileInput').addEventListener('change', (e)=>{
   if(!f) return;
   selected.file = f;
   selected.fileName = f.name;
+  // Reset page-selection state whenever a new file is chosen
+  selected.pdfNumPages = null;
+  selected.pageMode = 'all';
+  selected.pageRangeRaw = '';
+  selected.pageSelection = 'all';
+  lastPreviewedFile = null;
+  document.getElementById('pageAllRadio').checked = true;
+  document.getElementById('pageRangeInput').value = '';
+  document.getElementById('pageRangeInput').disabled = true;
+
   document.getElementById('fileName').textContent = f.name;
   document.getElementById('fileSize').textContent = formatBytes(f.size);
   document.getElementById('fileType').textContent = f.type || '-';
@@ -385,10 +565,222 @@ document.getElementById('toDetails').addEventListener('click', ()=>{
   showStep(3);
 });
 
-// Step 3: Details
+/* ------------------------------------------------------------------ *
+ *  Step 3: Document preview + page selection
+ * ------------------------------------------------------------------ */
+async function renderDocPreview(){
+  const gridEl = document.getElementById('pdfThumbGrid');
+  const noteEl = document.getElementById('previewNote');
+  const selectRow = document.getElementById('pageSelectRow');
+
+  if(!selected.file){
+    gridEl.classList.add('hidden');
+    noteEl.classList.add('hidden');
+    selectRow.classList.add('hidden');
+    return;
+  }
+
+  const isPdf = selected.file.type === 'application/pdf' || /\.pdf$/i.test(selected.file.name);
+
+  if(!isPdf){
+    gridEl.classList.add('hidden');
+    gridEl.innerHTML = '';
+    selectRow.classList.add('hidden');
+    noteEl.classList.remove('hidden');
+    noteEl.textContent = 'Page selection isn\'t available for this file type — it will print in full.';
+    selected.pdfNumPages = null;
+    selected.pageMode = 'all';
+    selected.pageSelection = 'all';
+    return;
+  }
+
+  noteEl.classList.add('hidden');
+  selectRow.classList.remove('hidden');
+  gridEl.classList.remove('hidden');
+
+  if(lastPreviewedFile === selected.file && selected.pdfNumPages){
+    updatePagesSummary();
+    return; // already rendered thumbnails for this exact file
+  }
+  lastPreviewedFile = selected.file;
+  gridEl.innerHTML = '<div style="padding:10px;color:var(--muted);font-size:13px">Rendering preview...</div>';
+  // Bug-fix: keep the range controls locked until we actually know the page
+  // count, so a fast typist can't submit a range before pdfNumPages exists.
+  document.getElementById('pageCustomRadio').disabled = true;
+  document.getElementById('pageRangeInput').disabled = true;
+
+  try {
+    const buf = await selected.file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    selected.pdfNumPages = pdf.numPages;
+    gridEl.innerHTML = '';
+
+    for(let i = 1; i <= pdf.numPages; i++){
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 0.85 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+
+      const thumb = document.createElement('div');
+      thumb.className = 'pdf-thumb thumb-selected';
+      thumb.dataset.page = i;
+      thumb.appendChild(canvas);
+      const label = document.createElement('div');
+      label.className = 'pdf-thumb-label';
+      label.textContent = 'Page ' + i;
+      thumb.appendChild(label);
+      gridEl.appendChild(thumb);
+    }
+    document.getElementById('pageCustomRadio').disabled = false;
+    if(selected.pageMode === 'custom'){
+      document.getElementById('pageRangeInput').disabled = false;
+    }
+    updatePagesSummary();
+  } catch(err){
+    gridEl.innerHTML = `<div class="msg error">Could not render preview: ${err.message}</div>`;
+    selected.pdfNumPages = null;
+  }
+}
+
+// Bug fix (#3): mobile keyboards and some IMEs auto-replace a typed hyphen
+// with an en dash (–), em dash (—), or minus sign (−) — e.g. typing "1-1"
+// can silently become "1–1", which the old regex didn't recognize, making
+// a perfectly valid single-page range like "1-1" appear "broken". We
+// normalize all dash-like characters to a plain "-" before parsing.
+function normalizeDashes(str){
+  return str.replace(/[\u2010-\u2015\u2212]/g, '-');
+}
+
+function parsePageRange(str, total){
+  if(!str || !str.trim()) return null;
+  const normalized = normalizeDashes(str);
+  const parts = normalized.split(',').map(s => s.trim()).filter(Boolean);
+  const pages = new Set();
+  for(const part of parts){
+    const m = part.match(/^(\d+)(?:-(\d+))?$/);
+    if(!m) return null;
+    const a = parseInt(m[1], 10);
+    const b = m[2] ? parseInt(m[2], 10) : a;
+    if(a < 1 || b < a) return null;
+    if(total && b > total) return null;
+    for(let i = a; i <= b; i++) pages.add(i);
+  }
+  return pages.size ? Array.from(pages).sort((x,y) => x - y) : null;
+}
+
+// Builds a new PDF containing only the selected pages (1-based page numbers).
+// Returns a File, or the original file if trimming isn't needed/possible.
+async function buildPagesOnlyFile(){
+  const isPdf = selected.file.type === 'application/pdf' || /\.pdf$/i.test(selected.file.name);
+  if(!isPdf || selected.pageMode === 'all' || !selected.pdfNumPages){
+    return selected.file;
+  }
+
+  const pageNumbers = parsePageRange(selected.pageRangeRaw, selected.pdfNumPages);
+  if(!pageNumbers){
+    return selected.file;
+  }
+  if(pageNumbers.length === selected.pdfNumPages){
+    return selected.file;
+  }
+
+  const { PDFDocument } = PDFLib;
+  const srcBytes = await selected.file.arrayBuffer();
+  const srcPdf = await PDFDocument.load(srcBytes);
+  const newPdf = await PDFDocument.create();
+  const indices = pageNumbers.map(n => n - 1);
+  const copiedPages = await newPdf.copyPages(srcPdf, indices);
+  copiedPages.forEach(page => newPdf.addPage(page));
+  const newBytes = await newPdf.save();
+
+  const trimmedName = selected.file.name.replace(/\.pdf$/i, '') + `_pages-${pageNumbers.join('-')}.pdf`;
+  return new File([newBytes], trimmedName, { type: 'application/pdf' });
+}
+
+// Bug fix (#4): gzip-compress the file client-side before upload using the
+// browser's native CompressionStream API — no external library needed.
+// Falls back to the uncompressed file on browsers that don't support it
+// (e.g. Safari < 16.4) so upload never breaks because of this.
+async function gzipFile(file){
+  if(typeof CompressionStream === 'undefined'){
+    console.warn('CompressionStream not supported in this browser — uploading uncompressed.');
+    return { file, compressed: false };
+  }
+  try {
+    const stream = file.stream().pipeThrough(new CompressionStream('gzip'));
+    const compressedBlob = await new Response(stream).blob();
+    const gzFile = new File([compressedBlob], file.name + '.gz', { type: 'application/gzip' });
+    return { file: gzFile, compressed: true };
+  } catch(err){
+    console.warn('Gzip compression failed, uploading uncompressed:', err);
+    return { file, compressed: false };
+  }
+}
+
+function updatePagesSummary(){
+  const sumPages = document.getElementById('sumPages');
+  const msgEl = document.getElementById('pageRangeMsg');
+  msgEl.textContent = '';
+  let parsed = null;
+
+  if(!selected.pdfNumPages){
+    selected.pageSelection = 'all';
+    sumPages.textContent = 'All';
+  } else if(selected.pageMode === 'all'){
+    selected.pageSelection = 'all';
+    sumPages.textContent = `All (${selected.pdfNumPages})`;
+  } else {
+    parsed = parsePageRange(selected.pageRangeRaw, selected.pdfNumPages);
+    if(!parsed){
+      selected.pageSelection = null;
+      sumPages.textContent = '-';
+      if(selected.pageRangeRaw.trim()){
+        msgEl.textContent = `Enter a valid range, e.g. 1-3,5,8-10 (within 1-${selected.pdfNumPages})`;
+      }
+    } else {
+      selected.pageSelection = parsed.join(',');
+      sumPages.textContent = `${selected.pageRangeRaw.trim()} (${parsed.length} of ${selected.pdfNumPages})`;
+    }
+  }
+
+  document.querySelectorAll('.pdf-thumb').forEach(t => {
+    const p = parseInt(t.dataset.page, 10);
+    const isSelected = selected.pageMode === 'all' || (parsed && parsed.includes(p));
+    t.classList.toggle('thumb-selected', !!isSelected);
+  });
+}
+
+document.getElementById('pageAllRadio').addEventListener('change', () => {
+  selected.pageMode = 'all';
+  document.getElementById('pageRangeInput').disabled = true;
+  updatePagesSummary();
+});
+document.getElementById('pageCustomRadio').addEventListener('change', () => {
+  selected.pageMode = 'custom';
+  document.getElementById('pageRangeInput').disabled = false;
+  updatePagesSummary();
+});
+document.getElementById('pageRangeInput').addEventListener('input', (e) => {
+  selected.pageRangeRaw = normalizeDashes(e.target.value);
+  updatePagesSummary();
+});
+
+/* Bug fix (#2): copies=0 — clamp AND write the corrected value back into
+   the input so the field never silently displays an invalid number, and
+   validate again defensively right before upload. */
 document.getElementById('copies').addEventListener('input', (e)=>{
-  selected.copies = Math.max(1, parseInt(e.target.value) || 1);
+  const raw = parseInt(e.target.value, 10);
+  const clamped = Math.max(1, isNaN(raw) ? 1 : raw);
+  selected.copies = clamped;
   document.getElementById('sumCopies').textContent = selected.copies;
+});
+document.getElementById('copies').addEventListener('blur', (e)=>{
+  // Only rewrite the visible field once the user leaves it, so we don't
+  // fight their typing (e.g. clearing the field to type "12" character by
+  // character), while still guaranteeing an invalid value never survives.
+  e.target.value = selected.copies;
 });
 
 document.querySelectorAll('.mode-btn').forEach(btn=>{
@@ -405,21 +797,69 @@ function populateSummary(){
   document.getElementById('sumFileName').textContent = selected.fileName || '-';
   document.getElementById('sumCopies').textContent = selected.copies;
   document.getElementById('sumMode').textContent = selected.mode === 'color' ? 'Color' : 'Black & White';
+  updatePagesSummary();
 }
 
 document.getElementById('back3').addEventListener('click', ()=> showStep(2));
 
 document.getElementById('toOtp').addEventListener('click', async ()=>{
+  // Defensive re-check (bug #2) — never let copies < 1 through, even if
+  // something upstream slipped past the input handlers.
+  if(!selected.copies || selected.copies < 1){
+    selected.copies = 1;
+    document.getElementById('copies').value = 1;
+    document.getElementById('sumCopies').textContent = 1;
+  }
+
+  if(selected.pageMode === 'custom' && !selected.pageSelection){
+    document.getElementById('pageRangeMsg').textContent = selected.pdfNumPages
+      ? `Enter a valid range, e.g. 1-3,5,8-10 (within 1-${selected.pdfNumPages})`
+      : 'Enter a valid page range.';
+    return;
+  }
+
   const nextBtn = document.getElementById('toOtp');
   nextBtn.disabled = true;
+  nextBtn.textContent = 'Preparing file...';
+
+  let fileToUpload;
+  try {
+    fileToUpload = await buildPagesOnlyFile();
+  } catch(err){
+    alert('Could not prepare the selected pages: ' + err.message);
+    nextBtn.disabled = false;
+    nextBtn.textContent = 'Next';
+    return;
+  }
+
+  nextBtn.textContent = 'Compressing...';
+  const { file: uploadFile, compressed } = await gzipFile(fileToUpload);
+
   nextBtn.textContent = 'Uploading...';
 
+  let userId;
+  try {
+    userId = await getCurrentUserId();
+  } catch(err){
+    alert('Could not verify your session: ' + err.message);
+    nextBtn.disabled = false;
+    nextBtn.textContent = 'Next';
+    return;
+  }
+
   const fd = new FormData();
-  fd.append('file', selected.file);
+  fd.append('file', uploadFile);
   fd.append('printer', selected.printer);
   fd.append('copies', selected.copies);
   fd.append('mode', selected.mode);
-  fd.append('userid', USER_ID);
+  // 'pages' is informational only — file already contains just the selected pages.
+  fd.append('pages', selected.pageSelection || 'all');
+  fd.append('userid', userId);
+  // Tell the backend whether it needs to gunzip the file, and what the
+  // real filename/mimetype was before compression.
+  fd.append('content_encoding', compressed ? 'gzip' : 'none');
+  fd.append('original_filename', fileToUpload.name);
+  fd.append('original_mimetype', fileToUpload.type || 'application/octet-stream');
 
   try {
     const res = await fetch(UPLOAD_ENDPOINT, {
@@ -442,8 +882,40 @@ document.getElementById('toOtp').addEventListener('click', async ()=>{
   }
 });
 
-// Step 4: OTP
-document.getElementById('back4').addEventListener('click', ()=> showStep(3));
+/* ------------------------------------------------------------------ *
+ *  Step 4: OTP
+ * ------------------------------------------------------------------ */
+
+// Two-phase Step 4:
+//   Phase A ("arrival gate"): no OTP field. Shows a loud red warning
+//     telling the user to walk to the lab before touching anything.
+//   Phase B (OTP entry):     revealed only after the user confirms arrival.
+//
+// Back navigation out of Step 4 is disabled — the only ways out are
+// Cancel (returns to Step 1 and cancels the pending job) or a successful
+// OTP submission.
+
+let currentLabNo = '—';
+
+function showArrivalGate(){
+  document.getElementById('arrivalGate').classList.remove('hidden');
+  document.getElementById('otpEntry').classList.add('hidden');
+  document.getElementById('arrivalLabNo').textContent = currentLabNo;
+  document.getElementById('otpInput').value = '';
+  document.getElementById('otpInput').disabled = false;
+  document.getElementById('otpMsg').textContent = '';
+  document.getElementById('otpMsg').className = 'msg';
+}
+
+function showOtpEntry(){
+  document.getElementById('arrivalGate').classList.add('hidden');
+  document.getElementById('otpEntry').classList.remove('hidden');
+  document.getElementById('otpInput').focus();
+}
+
+document.getElementById('arrivedBtn').addEventListener('click', ()=>{
+  showOtpEntry();
+});
 
 document.getElementById('cancelPrintBtn').addEventListener('click', async ()=>{
   if(!window.confirm('Are you sure you want to cancel this print job?')) return;
@@ -462,6 +934,11 @@ document.getElementById('cancelPrintBtn').addEventListener('click', async ()=>{
     selected.fileName = null;
     selected.printer = null;
     selected.printerName = null;
+    selected.pdfNumPages = null;
+    selected.pageMode = 'all';
+    selected.pageRangeRaw = '';
+    selected.pageSelection = 'all';
+    lastPreviewedFile = null;
     document.getElementById('fileInput').value = '';
     document.getElementById('filePreview').classList.add('hidden');
     document.getElementById('otpInput').value = '';
@@ -474,6 +951,11 @@ document.getElementById('cancelPrintBtn').addEventListener('click', async ()=>{
   } finally {
     cancelButton.disabled = false;
   }
+});
+
+// Cancel from the arrival gate — same behaviour as the OTP-phase cancel.
+document.getElementById('cancelPrintBtnGate').addEventListener('click', ()=>{
+  document.getElementById('cancelPrintBtn').click();
 });
 
 document.getElementById('submitOtpBtn').addEventListener('click', async ()=>{
@@ -493,6 +975,17 @@ document.getElementById('submitOtpBtn').addEventListener('click', async ()=>{
   otpMsg.textContent = '';
   otpMsg.className = 'msg';
 
+  let userId;
+  try {
+    userId = await getCurrentUserId();
+  } catch(err){
+    otpMsg.textContent = 'Could not verify your session: ' + err.message;
+    otpMsg.className = 'msg error';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit OTP';
+    return;
+  }
+
   try {
     const res = await fetch(PRINT_OTP_ENDPOINT, {
       method: 'POST',
@@ -503,7 +996,7 @@ document.getElementById('submitOtpBtn').addEventListener('click', async ()=>{
       },
       body: JSON.stringify({
         otp: enteredOTP,
-        userid: USER_ID,
+        userid: userId,
         printer: selected.printer
       })
     });
@@ -526,7 +1019,18 @@ document.getElementById('submitOtpBtn').addEventListener('click', async ()=>{
     submitBtn.textContent = 'Submit OTP';
   }
 });
+
 restorePendingPrint();
+
+// Optional: block the Android hardware back button while on Step 4.
+// This keeps the user on the arrival gate until they either cancel or
+// submit the OTP. Remove this block if you don't want that behaviour.
+window.addEventListener('popstate', () => {
+  if(currentStep === 4){
+    history.pushState(null, '', location.href);
+  }
+});
+history.pushState(null, '', location.href);
 </script>
 </body>
 </html>
