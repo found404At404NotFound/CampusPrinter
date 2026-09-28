@@ -1,5 +1,5 @@
 # 🖨️ CampusPrinter
-
+ 
 ### Campus printing, without the queue.
 
 **CampusPrinter** is a secure, centralized printing system designed for college campuses. It connects faculty members to printers across different labs through a central backend and lightweight **Print Agents** running on lab computers.
