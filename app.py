@@ -112,8 +112,15 @@ def current_clerk_identity():
 
 @app.route("/")
 def home():
-    return redirect("/login")
-
+    return send_from_directory("templates","home.html")
+    
+@app.route("/privacy")
+def privacy():
+    return send_from_directory("templates","privacy.html")
+    
+    @app.route("/terms")
+def terms():
+    return send_from_directory("templates","terms.html")
 
 @app.get('/login')
 def login():
