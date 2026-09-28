@@ -118,7 +118,7 @@ def home():
 def privacy():
     return send_from_directory("templates","privacy.html")
     
-    @app.route("/terms")
+@app.route("/terms")
 def terms():
     return send_from_directory("templates","terms.html")
 
