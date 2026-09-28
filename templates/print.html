@@ -98,8 +98,15 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
 .pdf-thumb.thumb-selected{border-color:var(--blue)}
 .page-select-row{align-items:flex-start !important}
 .page-select-options{display:flex;flex-direction:column;gap:8px;flex:1}
-.page-select-options label.opt{font-weight:400;display:flex;align-items:center;gap:6px;font-size:14px}
-#pageRangeInput{margin-top:2px}
+.page-mode-toggle{display:flex;gap:8px}
+.page-mode-btn{
+  flex:1;padding:10px 12px;border-radius:8px;border:1px solid #dfe8ff;
+  background:#f8fbff;cursor:pointer;text-align:center;font-weight:600;
+  color:#334155;font-size:14px;user-select:none;-webkit-tap-highlight-color:transparent;
+}
+.page-mode-btn.selected{background:var(--blue);color:#fff;border-color:var(--blue)}
+#pageRangeInput{margin-top:2px;transition:opacity .15s}
+#pageRangeInput.mode-all{opacity:.55;cursor:pointer}
 /* summary */
 .summary{background:#f8fbff;padding:12px;border-radius:8px;margin-top:8px}
 .cta{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
@@ -197,8 +204,8 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
       <div class="upload-area" id="uploadArea">
         <div style="font-size:28px;color:var(--blue)"><i class="fas fa-file-upload"></i></div>
         <p class="muted">Drag & drop your file here or click to browse</p>
-        <p class="muted" style="font-size:12px">Supports: JPG, PNG, WEBP, PDF, DOCX, DOC, PPTX, PPT</p>
-        <input id="fileInput" class="hidden" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.docx,.doc,.pptx,.ppt"/>
+        <p class="muted" style="font-size:12px">Only PDF files are supported</p>
+        <input id="fileInput" class="hidden" type="file" accept="application/pdf,.pdf"/>
       </div>
       <div class="file-preview hidden" id="filePreview">
         <div><strong>Name:</strong> <span id="fileName">-</span></div>
@@ -228,16 +235,17 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
       <div class="row" style="align-items:flex-start">
         <label>Print Mode</label>
         <div class="mode-choice" style="flex:1">
-          <div class="mode-btn selected" data-mode="color">Color</div>
-          <div class="mode-btn" data-mode="bw">Black & White</div>
+          <div class="mode-btn selected" data-mode="bw">Black & White</div>
         </div>
       </div>
       <div class="row page-select-row" id="pageSelectRow">
         <label>Pages to print</label>
         <div class="page-select-options">
-          <label class="opt"><input type="radio" name="pageMode" id="pageAllRadio" checked> All pages</label>
-          <label class="opt"><input type="radio" name="pageMode" id="pageCustomRadio"> Custom range</label>
-          <input type="text" id="pageRangeInput" placeholder="e.g. 1-3,5,8-10" disabled/>
+          <div class="page-mode-toggle">
+            <div class="page-mode-btn selected" id="pageAllBtn" data-mode="all">All pages</div>
+            <div class="page-mode-btn" id="pageCustomBtn" data-mode="custom">Custom range</div>
+          </div>
+          <input type="text" id="pageRangeInput" placeholder="e.g. 1-3,5,8-10" readonly/>
           <div id="pageRangeMsg" class="msg error" style="margin-top:0"></div>
         </div>
       </div>
@@ -246,7 +254,7 @@ select,input[type="file"],input[type="number"],input[type="text"],input[type="pa
         <div><strong>File:</strong> <span id="sumFileName">-</span></div>
         <div><strong>Pages:</strong> <span id="sumPages">-</span></div>
         <div><strong>Copies:</strong> <span id="sumCopies">1</span></div>
-        <div><strong>Mode:</strong> <span id="sumMode">Color</span></div>
+        <div><strong>Mode:</strong> <span id="sumMode">Black & White</span></div>
       </div>
       <div class="cta">
         <button class="btn secondary" id="back3">Back</button>
@@ -366,7 +374,7 @@ const selected = {
   file: null,
   fileName: null,
   copies: 1,
-  mode: 'color',
+  mode: 'bw',
   pdfNumPages: null,
   pageMode: 'all',
   pageRangeRaw: '',
@@ -542,6 +550,19 @@ document.getElementById('uploadArea').addEventListener('click', ()=> document.ge
 document.getElementById('fileInput').addEventListener('change', (e)=>{
   const f = e.target.files[0];
   if(!f) return;
+
+  const isPdf =
+    f.type === 'application/pdf' ||
+    /\.pdf$/i.test(f.name);
+  if(!isPdf){
+    alert('Only PDF files are supported. Please upload a PDF.');
+    e.target.value = '';
+    selected.file = null;
+    selected.fileName = null;
+    document.getElementById('filePreview').classList.add('hidden');
+    return;
+  }
+
   selected.file = f;
   selected.fileName = f.name;
   // Reset page-selection state whenever a new file is chosen
@@ -550,9 +571,8 @@ document.getElementById('fileInput').addEventListener('change', (e)=>{
   selected.pageRangeRaw = '';
   selected.pageSelection = 'all';
   lastPreviewedFile = null;
-  document.getElementById('pageAllRadio').checked = true;
+  setPageMode('all');
   document.getElementById('pageRangeInput').value = '';
-  document.getElementById('pageRangeInput').disabled = true;
 
   document.getElementById('fileName').textContent = f.name;
   document.getElementById('fileSize').textContent = formatBytes(f.size);
@@ -606,8 +626,8 @@ async function renderDocPreview(){
   gridEl.innerHTML = '<div style="padding:10px;color:var(--muted);font-size:13px">Rendering preview...</div>';
   // Bug-fix: keep the range controls locked until we actually know the page
   // count, so a fast typist can't submit a range before pdfNumPages exists.
-  document.getElementById('pageCustomRadio').disabled = true;
-  document.getElementById('pageRangeInput').disabled = true;
+  setPageModeButtonsEnabled(false);
+  document.getElementById('pageRangeInput').readOnly = true;
 
   try {
     const buf = await selected.file.arrayBuffer();
@@ -633,10 +653,8 @@ async function renderDocPreview(){
       thumb.appendChild(label);
       gridEl.appendChild(thumb);
     }
-    document.getElementById('pageCustomRadio').disabled = false;
-    if(selected.pageMode === 'custom'){
-      document.getElementById('pageRangeInput').disabled = false;
-    }
+    setPageModeButtonsEnabled(true);
+    setPageMode(selected.pageMode);
     updatePagesSummary();
   } catch(err){
     gridEl.innerHTML = `<div class="msg error">Could not render preview: ${err.message}</div>`;
@@ -752,17 +770,62 @@ function updatePagesSummary(){
   });
 }
 
-document.getElementById('pageAllRadio').addEventListener('change', () => {
-  selected.pageMode = 'all';
-  document.getElementById('pageRangeInput').disabled = true;
+function setPageMode(mode){
+  selected.pageMode = mode;
+  document.getElementById('pageAllBtn').classList.toggle('selected', mode === 'all');
+  document.getElementById('pageCustomBtn').classList.toggle('selected', mode === 'custom');
+  const input = document.getElementById('pageRangeInput');
+  // Never actually disable the input — if we do, click/focus events never
+  // fire on it and the "tap the box to switch to custom" path is dead.
+  // Instead we visually dim it and swap it to readOnly so mobile keyboards
+  // only appear once the user has committed to entering a custom range.
+  input.classList.toggle('mode-all', mode !== 'custom');
+  if(mode === 'custom'){
+    input.readOnly = false;
+  } else {
+    input.readOnly = true;
+  }
   updatePagesSummary();
+}
+
+function setPageModeButtonsEnabled(enabled){
+  document.getElementById('pageAllBtn').style.pointerEvents = enabled ? '' : 'none';
+  document.getElementById('pageCustomBtn').style.pointerEvents = enabled ? '' : 'none';
+  document.getElementById('pageAllBtn').style.opacity = enabled ? '' : '0.5';
+  document.getElementById('pageCustomBtn').style.opacity = enabled ? '' : '0.5';
+}
+
+document.getElementById('pageAllBtn').addEventListener('click', () => {
+  setPageMode('all');
 });
-document.getElementById('pageCustomRadio').addEventListener('change', () => {
-  selected.pageMode = 'custom';
-  document.getElementById('pageRangeInput').disabled = false;
-  updatePagesSummary();
+document.getElementById('pageCustomBtn').addEventListener('click', () => {
+  setPageMode('custom');
 });
-document.getElementById('pageRangeInput').addEventListener('input', (e) => {
+
+// Tapping the range input itself auto-selects "Custom range" and lets the
+// user start typing immediately — no need to press the button above first.
+const pageRangeInputEl = document.getElementById('pageRangeInput');
+pageRangeInputEl.addEventListener('click', () => {
+  if(document.getElementById('pageCustomBtn').style.pointerEvents === 'none'){
+    return; // still locked while the PDF preview is rendering
+  }
+  if(selected.pageMode !== 'custom'){
+    setPageMode('custom');
+  }
+  pageRangeInputEl.focus();
+});
+pageRangeInputEl.addEventListener('focus', () => {
+  if(document.getElementById('pageCustomBtn').style.pointerEvents === 'none'){
+    return;
+  }
+  if(selected.pageMode !== 'custom'){
+    setPageMode('custom');
+  }
+});
+pageRangeInputEl.addEventListener('input', (e) => {
+  if(selected.pageMode !== 'custom'){
+    setPageMode('custom');
+  }
   selected.pageRangeRaw = normalizeDashes(e.target.value);
   updatePagesSummary();
 });
