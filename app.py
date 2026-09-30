@@ -53,7 +53,8 @@ CORS(
         "http://127.0.0.1:59554",
         "http://127.0.0.1:5500",
         "https://127.0.0.1:5500",
-        "http://127.0.0.1:52018"
+        "http://127.0.0.1:52018",
+        "https://printer.found404.me"
     ],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=[
